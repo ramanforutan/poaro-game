@@ -1,0 +1,1177 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>کابل‌بُر — PoaroVPN</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;700;900&display=swap');
+
+  :root {
+    --bg:        #0a0a0f;
+    --panel:     #11111a;
+    --surface:   #1a1a28;
+    --border:    #2a2a40;
+    --gold:      #f5c518;
+    --gold2:     #e8a800;
+    --spark1:    #00eaff;
+    --spark2:    #ff6b00;
+    --spark3:    #fffb00;
+    --red:       #ff3b3b;
+    --green:     #00e676;
+    --text:      #e8e8f0;
+    --muted:     #6b6b88;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Vazirmatn', sans-serif;
+    overflow: hidden;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    user-select: none;
+  }
+
+  /* ── SCREENS ── */
+  .screen { display:none; flex-direction:column; height:100dvh; }
+  .screen.active { display:flex; }
+
+  /* ── HOME ── */
+  #home {
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    background: radial-gradient(ellipse at 50% 30%, #1a1030 0%, var(--bg) 70%);
+  }
+
+  .logo-wrap {
+    position: relative;
+    margin-bottom: 12px;
+  }
+  .logo-title {
+    font-size: 2.2rem;
+    font-weight: 900;
+    letter-spacing: 2px;
+    color: var(--gold);
+    text-shadow: 0 0 30px #f5c51888, 0 2px 0 #0004;
+    text-align: center;
+    line-height: 1.1;
+  }
+  .logo-sub {
+    font-size: 0.85rem;
+    color: var(--muted);
+    text-align: center;
+    letter-spacing: 4px;
+    margin-top: 4px;
+  }
+
+  /* character preview */
+  .char-preview {
+    width: 110px;
+    height: 110px;
+    margin: 18px auto 10px;
+    position: relative;
+  }
+  .char-preview canvas { width:100%; height:100%; }
+
+  .home-desc {
+    font-size: 0.82rem;
+    color: var(--muted);
+    text-align: center;
+    max-width: 260px;
+    margin: 8px auto 28px;
+    line-height: 1.6;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--gold2), var(--gold));
+    color: #111;
+    font-family: 'Vazirmatn', sans-serif;
+    font-weight: 900;
+    font-size: 1.1rem;
+    border: none;
+    border-radius: 16px;
+    padding: 16px 48px;
+    cursor: pointer;
+    letter-spacing: 1px;
+    box-shadow: 0 4px 24px #f5c51840;
+    transition: transform .1s, box-shadow .1s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn-primary:active { transform: scale(.96); box-shadow: 0 2px 10px #f5c51830; }
+
+  .btn-secondary {
+    background: var(--surface);
+    color: var(--text);
+    font-family: 'Vazirmatn', sans-serif;
+    font-weight: 700;
+    font-size: 0.95rem;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 32px;
+    cursor: pointer;
+    margin-top: 12px;
+    transition: background .15s;
+  }
+  .btn-secondary:active { background: var(--border); }
+
+  /* ── GAME SCREEN ── */
+  #game {
+    position: relative;
+    flex-direction: column;
+  }
+
+  #gameCanvas {
+    display: block;
+    width: 100%;
+    flex: 1;
+    touch-action: none;
+  }
+
+  .game-hud {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px 8px;
+    background: linear-gradient(to bottom, #0a0a0fcc, transparent);
+    pointer-events: none;
+    z-index: 10;
+  }
+  .hud-score {
+    font-size: 1.6rem;
+    font-weight: 900;
+    color: var(--gold);
+    text-shadow: 0 0 16px var(--gold);
+    min-width: 70px;
+  }
+  .hud-best {
+    font-size: 0.75rem;
+    color: var(--muted);
+    text-align: center;
+  }
+  .hud-best span { color: var(--gold); font-weight:700; }
+  .hud-lives {
+    display: flex;
+    gap: 5px;
+    min-width: 70px;
+    justify-content: flex-end;
+  }
+  .life-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--red);
+    box-shadow: 0 0 6px var(--red);
+  }
+  .life-dot.lost { background: #333; box-shadow: none; }
+
+  /* ── LEADERBOARD ── */
+  #leaderboard {
+    flex-direction: column;
+    background: var(--bg);
+  }
+  .lb-header {
+    display: flex;
+    align-items: center;
+    padding: 16px;
+    border-bottom: 1px solid var(--border);
+    gap: 12px;
+  }
+  .lb-header h2 { font-size: 1.1rem; font-weight: 900; flex: 1; }
+  .lb-back {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 10px;
+    padding: 7px 16px;
+    font-family: 'Vazirmatn', sans-serif;
+    font-size: 0.85rem;
+    cursor: pointer;
+  }
+  .lb-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+  }
+  .lb-tab {
+    flex: 1;
+    padding: 12px;
+    text-align: center;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: color .15s, border-color .15s;
+  }
+  .lb-tab.active { color: var(--gold); border-color: var(--gold); }
+
+  .lb-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 0;
+  }
+  .lb-row {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid #ffffff08;
+    gap: 12px;
+    transition: background .1s;
+  }
+  .lb-row.me { background: #f5c51810; }
+  .lb-rank {
+    font-size: 1rem;
+    font-weight: 900;
+    min-width: 28px;
+    text-align: center;
+  }
+  .lb-rank.gold { color: var(--gold); }
+  .lb-rank.silver { color: #c0c0c0; }
+  .lb-rank.bronze { color: #cd7f32; }
+  .lb-avatar {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    background: var(--surface);
+    border: 2px solid var(--border);
+    display: flex; align-items:center; justify-content:center;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+  }
+  .lb-name { flex: 1; font-size: 0.9rem; font-weight: 700; }
+  .lb-score-val {
+    font-size: 1rem;
+    font-weight: 900;
+    color: var(--gold);
+  }
+
+  /* ── GAMEOVER OVERLAY ── */
+  #gameoverOverlay {
+    position: absolute;
+    inset: 0;
+    background: #0a0a0fdd;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 20;
+    gap: 12px;
+    backdrop-filter: blur(4px);
+  }
+  #gameoverOverlay.show { display: flex; }
+  .go-title {
+    font-size: 2.2rem;
+    font-weight: 900;
+    color: var(--red);
+    text-shadow: 0 0 30px var(--red);
+    letter-spacing: 2px;
+  }
+  .go-score { font-size: 1rem; color: var(--muted); }
+  .go-score b { color: var(--gold); font-size: 1.4rem; }
+  .go-best { font-size: 0.85rem; color: var(--muted); }
+  .go-best span { color: var(--green); font-weight: 700; }
+
+</style>
+</head>
+<body>
+
+<!-- ══ HOME ══════════════════════════════════ -->
+<div id="home" class="screen active">
+  <div class="logo-wrap">
+    <div class="logo-title">⚡ کابل‌بُر</div>
+    <div class="logo-sub">CABLE CUTTER</div>
+  </div>
+  <div class="char-preview">
+    <canvas id="charPreviewCanvas" width="110" height="110"></canvas>
+  </div>
+  <div class="home-desc">
+    کابل‌ها رو ببُر، از جرقه‌ها فرار کن!<br>هرچه سریع‌تر بزنی، امتیاز بیشتر
+  </div>
+  <button class="btn-primary" onclick="startGame()">▶  بازی</button>
+  <button class="btn-secondary" onclick="showLeaderboard()">🏆  تابلوی امتیازات</button>
+</div>
+
+<!-- ══ GAME ══════════════════════════════════ -->
+<div id="game" class="screen">
+  <div class="game-hud">
+    <div class="hud-score" id="hudScore">0</div>
+    <div class="hud-best">بهترین<br><span id="hudBest">0</span></div>
+    <div class="hud-lives" id="hudLives"></div>
+  </div>
+  <canvas id="gameCanvas"></canvas>
+  <div id="gameoverOverlay">
+    <div class="go-title">GAME OVER</div>
+    <div class="go-score">امتیاز: <b id="goScore">0</b></div>
+    <div class="go-best">بهترین: <span id="goBest">0</span></div>
+    <button class="btn-primary" style="margin-top:8px" onclick="startGame()">دوباره</button>
+    <button class="btn-secondary" onclick="showLeaderboard()">🏆 تابلو</button>
+    <button class="btn-secondary" style="margin-top:0" onclick="showScreen('home')">🏠 خانه</button>
+  </div>
+</div>
+
+<!-- ══ LEADERBOARD ══════════════════════════ -->
+<div id="leaderboard" class="screen">
+  <div class="lb-header">
+    <button class="lb-back" onclick="showScreen('home')">← برگشت</button>
+    <h2>🏆 تابلوی امتیازات</h2>
+  </div>
+  <div class="lb-tabs">
+    <div class="lb-tab active" onclick="switchTab('global')">جهانی</div>
+    <div class="lb-tab" onclick="switchTab('weekly')">هفتگی</div>
+  </div>
+  <div class="lb-list" id="lbList"></div>
+</div>
+
+<script>
+// ══════════════════════════════════════════
+//  Telegram WebApp init
+// ══════════════════════════════════════════
+const tg = window.Telegram?.WebApp;
+if (tg) {
+  tg.ready();
+  tg.expand();
+  tg.setHeaderColor('#0a0a0f');
+  tg.setBackgroundColor('#0a0a0f');
+}
+
+const TG_USER = tg?.initDataUnsafe?.user;
+const MY_ID   = TG_USER?.id ?? 0;
+const MY_NAME = TG_USER?.first_name ?? 'بازیکن';
+
+// ══════════════════════════════════════════
+//  Storage helpers
+// ══════════════════════════════════════════
+function loadBest() { return parseInt(localStorage.getItem('cableBest') || '0'); }
+function saveBest(v) { localStorage.setItem('cableBest', v); }
+
+// Simple in-memory leaderboard (persisted via window.storage if available)
+let leaderboardData = { global: [], weekly: [] };
+
+async function loadLeaderboard() {
+  try {
+    const r = await window.storage?.get('lb_global', true);
+    if (r?.value) leaderboardData.global = JSON.parse(r.value);
+    const r2 = await window.storage?.get('lb_weekly', true);
+    if (r2?.value) leaderboardData.weekly = JSON.parse(r2.value);
+  } catch(e) {}
+}
+
+async function submitScore(score) {
+  const entry = {
+    id: MY_ID,
+    name: MY_NAME,
+    score: score,
+    ts: Date.now()
+  };
+  // update global
+  const gi = leaderboardData.global.findIndex(e => e.id === MY_ID);
+  if (gi >= 0) { if (score > leaderboardData.global[gi].score) leaderboardData.global[gi] = entry; }
+  else leaderboardData.global.push(entry);
+  leaderboardData.global.sort((a,b) => b.score - a.score);
+  leaderboardData.global = leaderboardData.global.slice(0,100);
+
+  // weekly (entries older than 7 days dropped)
+  const week = Date.now() - 7*86400000;
+  leaderboardData.weekly = leaderboardData.weekly.filter(e => e.ts > week);
+  const wi = leaderboardData.weekly.findIndex(e => e.id === MY_ID);
+  if (wi >= 0) { if (score > leaderboardData.weekly[wi].score) leaderboardData.weekly[wi] = entry; }
+  else leaderboardData.weekly.push(entry);
+  leaderboardData.weekly.sort((a,b) => b.score - a.score);
+  leaderboardData.weekly = leaderboardData.weekly.slice(0,100);
+
+  try {
+    await window.storage?.set('lb_global', JSON.stringify(leaderboardData.global), true);
+    await window.storage?.set('lb_weekly', JSON.stringify(leaderboardData.weekly), true);
+  } catch(e) {}
+}
+
+// ══════════════════════════════════════════
+//  Screen management
+// ══════════════════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if (id !== 'game') stopGame();
+}
+
+// ══════════════════════════════════════════
+//  Character preview canvas (home screen)
+// ══════════════════════════════════════════
+const prevCvs = document.getElementById('charPreviewCanvas');
+const prevCtx = prevCvs.getContext('2d');
+function drawPreviewChar(frame) {
+  const ctx = prevCtx;
+  const W = 110, H = 110;
+  ctx.clearRect(0,0,W,H);
+
+  // glow bg
+  const grd = ctx.createRadialGradient(55,60,5,55,60,52);
+  grd.addColorStop(0,'#f5c51818'); grd.addColorStop(1,'transparent');
+  ctx.fillStyle = grd; ctx.fillRect(0,0,W,H);
+
+  drawCharacter(ctx, 55, 58, 1, frame, false);
+}
+let prevFrame = 0;
+setInterval(()=>{ prevFrame++; drawPreviewChar(prevFrame); }, 80);
+
+// ══════════════════════════════════════════
+//  DRAW CHARACTER
+// ══════════════════════════════════════════
+function drawCharacter(ctx, x, y, scale, frame, facingLeft) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(facingLeft ? -scale : scale, scale);
+
+  const bob = Math.sin(frame * 0.15) * 1.5;
+
+  // body — dark coat
+  ctx.fillStyle = '#1a1a2e';
+  ctx.beginPath();
+  ctx.roundRect(-13, -18 + bob, 26, 34, 6);
+  ctx.fill();
+
+  // coat collar / lapels
+  ctx.fillStyle = '#2a2a45';
+  ctx.beginPath();
+  ctx.moveTo(-8, -18 + bob);
+  ctx.lineTo(0, -10 + bob);
+  ctx.lineTo(8, -18 + bob);
+  ctx.fill();
+
+  // head
+  ctx.fillStyle = '#c8a882';
+  ctx.beginPath();
+  ctx.ellipse(0, -28 + bob, 14, 14, 0, 0, Math.PI*2);
+  ctx.fill();
+
+  // hat
+  ctx.fillStyle = '#111';
+  ctx.fillRect(-16, -44 + bob, 32, 6);   // brim
+  ctx.fillRect(-10, -58 + bob, 20, 16);  // crown
+  // hat band
+  ctx.fillStyle = '#f5c518';
+  ctx.fillRect(-10, -45 + bob, 20, 3);
+
+  // eyes
+  ctx.fillStyle = '#1a0a00';
+  ctx.beginPath();
+  ctx.ellipse(-5, -29 + bob, 2.5, 2.5, 0, 0, Math.PI*2);
+  ctx.ellipse(5, -29 + bob, 2.5, 2.5, 0, 0, Math.PI*2);
+  ctx.fill();
+  // eye shine
+  ctx.fillStyle = '#fff';
+  ctx.beginPath();
+  ctx.ellipse(-4, -30 + bob, 1, 1, 0, 0, Math.PI*2);
+  ctx.ellipse(6, -30 + bob, 1, 1, 0, 0, Math.PI*2);
+  ctx.fill();
+
+  // ── MUSTACHE (signature element) ──
+  ctx.strokeStyle = '#3a1f00';
+  ctx.lineWidth = 3;
+  ctx.lineCap = 'round';
+
+  // left wing
+  ctx.beginPath();
+  ctx.moveTo(0, -24 + bob);
+  ctx.bezierCurveTo(-3, -24+bob, -9, -26+bob, -11, -22+bob);
+  ctx.stroke();
+  // right wing
+  ctx.beginPath();
+  ctx.moveTo(0, -24 + bob);
+  ctx.bezierCurveTo(3, -24+bob, 9, -26+bob, 11, -22+bob);
+  ctx.stroke();
+  // center dip
+  ctx.fillStyle = '#3a1f00';
+  ctx.beginPath();
+  ctx.arc(0, -23.5 + bob, 1.8, 0, Math.PI*2);
+  ctx.fill();
+
+  // axe arm
+  const swingAngle = Math.sin(frame * 0.25) * 0.4;
+  ctx.save();
+  ctx.translate(14, -10 + bob);
+  ctx.rotate(swingAngle);
+
+  // arm
+  ctx.strokeStyle = '#c8a882';
+  ctx.lineWidth = 5;
+  ctx.beginPath();
+  ctx.moveTo(0,0); ctx.lineTo(12, 16);
+  ctx.stroke();
+
+  // axe handle
+  ctx.strokeStyle = '#8b5e3c';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(12,16); ctx.lineTo(22, 4);
+  ctx.stroke();
+
+  // axe head (blade shape)
+  ctx.fillStyle = '#8899aa';
+  ctx.beginPath();
+  ctx.moveTo(22, 4);
+  ctx.lineTo(30, -4);
+  ctx.lineTo(34, 0);
+  ctx.lineTo(28, 10);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = '#bbd0e0';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // axe blade edge glow
+  ctx.strokeStyle = '#00eaff44';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(30,-4); ctx.lineTo(34,0); ctx.lineTo(28,10);
+  ctx.stroke();
+
+  ctx.restore();
+
+  // idle arm (left)
+  ctx.strokeStyle = '#c8a882';
+  ctx.lineWidth = 5;
+  ctx.beginPath();
+  ctx.moveTo(-13, -10 + bob);
+  ctx.lineTo(-20, 4 + bob);
+  ctx.stroke();
+
+  // legs
+  const legSwing = Math.sin(frame * 0.2) * 4;
+  ctx.fillStyle = '#111';
+  ctx.beginPath();
+  ctx.roundRect(-10, 14+bob, 8, 16, 3);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.roundRect(2, 14+bob, 8, 16, 3);
+  ctx.fill();
+  // boots
+  ctx.fillStyle = '#4a3000';
+  ctx.beginPath();
+  ctx.roundRect(-12, 27+bob, 11, 7, 3);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.roundRect(1, 27+bob, 11, 7, 3);
+  ctx.fill();
+
+  ctx.restore();
+}
+
+// ══════════════════════════════════════════
+//  GAME ENGINE
+// ══════════════════════════════════════════
+const canvas = document.getElementById('gameCanvas');
+const ctx    = canvas.getContext('2d');
+
+let W, H, raf, running = false;
+let score, best, lives, frame, speed, spawnTimer, difficulty;
+let charX, charSide; // 'left' | 'right'
+let cable, sparks, particles;
+let justSwitched = false;
+let combo = 0, comboTimer = 0;
+
+function resizeCanvas() {
+  const rect = canvas.getBoundingClientRect();
+  canvas.width  = rect.width  * devicePixelRatio;
+  canvas.height = rect.height * devicePixelRatio;
+  ctx.scale(devicePixelRatio, devicePixelRatio);
+  W = rect.width; H = rect.height;
+}
+window.addEventListener('resize', () => { if (running) { resizeCanvas(); }});
+
+// ── Cable structure ──────────────────────
+// cable: a vertical wire in center, with "branches" (exposed wire ends / sparks)
+// branches are on left or right, player must be on opposite side
+
+function makeCable() {
+  return {
+    x: W * 0.5,
+    segments: [],   // { side, y, active, hitY, sparks: [] }
+    totalCut: 0,
+  };
+}
+
+const SEG_HEIGHT = 90;
+
+function populateCable(cable) {
+  cable.segments = [];
+  let numVisible = Math.ceil(H / SEG_HEIGHT) + 2;
+  for (let i = 0; i < numVisible + 4; i++) {
+    cable.segments.push(makeSegment(i));
+  }
+}
+
+function makeSegment(index) {
+  return {
+    side: Math.random() < 0.5 ? 'left' : 'right',
+    y: index * SEG_HEIGHT,
+    active: true,
+    sparkPhase: Math.random() * Math.PI * 2,
+    crackLevel: 0,   // 0-1 how damaged
+  };
+}
+
+function spawnParticle(x, y, color) {
+  const angle = Math.random() * Math.PI * 2;
+  const spd   = 1 + Math.random() * 5;
+  particles.push({
+    x, y,
+    vx: Math.cos(angle) * spd,
+    vy: Math.sin(angle) * spd - 2,
+    life: 1,
+    decay: 0.03 + Math.random() * 0.04,
+    color,
+    size: 2 + Math.random() * 4,
+  });
+}
+
+// ── Ambient floating sparks ──────────────
+function addAmbientSparks() {
+  sparks.push({
+    x: Math.random() * W,
+    y: H + 10,
+    vx: (Math.random() - 0.5) * 0.8,
+    vy: -0.5 - Math.random() * 1.5,
+    life: 1,
+    color: ['#00eaff','#fffb00','#ff6b00'][Math.floor(Math.random()*3)],
+    size: 1 + Math.random() * 2,
+    flicker: Math.random() * Math.PI * 2,
+  });
+}
+
+// ── Input ────────────────────────────────
+function handleInput(side) {
+  if (!running) return;
+  // side = 'left' or 'right' — player is on that side and chops
+  // the bottom-most active segment that has a branch on opposite side gets cut
+  const seg = cable.segments.find(s => s.active && s.y > H * 0.45 && s.y < H * 0.85);
+  if (!seg) return;
+
+  if (seg.side === side) {
+    // wrong side — hit by spark
+    loseLife();
+    shakeScreen();
+    for(let i=0;i<10;i++) spawnParticle(cable.x + (side==='left'?-1:1)*40, seg.y, '#ff3b3b');
+    return;
+  }
+
+  // correct cut
+  seg.active = false;
+  seg.crackLevel = 1;
+  score++;
+  combo++;
+  comboTimer = 60;
+
+  const cx = cable.x + (side==='left' ? -1 : 1) * 55;
+  for(let i=0;i<20;i++) {
+    const c = ['#00eaff','#fffb00','#ff6b00','#fff'][Math.floor(Math.random()*4)];
+    spawnParticle(cx, seg.y, c);
+  }
+
+  // cable scrolls down = new segment appears on top
+  cable.segments.push(makeSegment(-1));
+
+  // speed up gradually
+  speed = Math.min(3.5, 0.8 + score * 0.025);
+  document.getElementById('hudScore').textContent = score;
+  if (score > best) { best = score; saveBest(best); document.getElementById('hudBest').textContent = best; }
+  charSide = side;
+  justSwitched = true;
+}
+
+canvas.addEventListener('touchstart', e => {
+  e.preventDefault();
+  const touch = e.touches[0];
+  handleInput(touch.clientX < W/2 ? 'left' : 'right');
+}, { passive: false });
+canvas.addEventListener('mousedown', e => {
+  handleInput(e.clientX < W/2 ? 'left' : 'right');
+});
+// keyboard for desktop testing
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowLeft'  || e.key === 'a') handleInput('left');
+  if (e.key === 'ArrowRight' || e.key === 'd') handleInput('right');
+});
+
+// ── Lives UI ─────────────────────────────
+function renderLives() {
+  const el = document.getElementById('hudLives');
+  el.innerHTML = '';
+  for(let i=0;i<3;i++){
+    const d = document.createElement('div');
+    d.className = 'life-dot' + (i < (3-lives) ? ' lost' : '');
+    el.appendChild(d);
+  }
+}
+
+let shakeX = 0, shakeY = 0, shakeDur = 0;
+function shakeScreen() { shakeDur = 12; }
+
+function loseLife() {
+  lives = Math.max(0, lives - 1);
+  renderLives();
+  if (lives <= 0) gameOver();
+}
+
+// ── DRAW CABLE ───────────────────────────
+function drawCable(scrollY) {
+  const cx = cable.x;
+
+  // main wire — thick glowing cable
+  ctx.save();
+  ctx.shadowBlur = 18;
+  ctx.shadowColor = '#00eaff44';
+  ctx.strokeStyle = '#334';
+  ctx.lineWidth = 16;
+  ctx.beginPath();
+  ctx.moveTo(cx, 0); ctx.lineTo(cx, H);
+  ctx.stroke();
+
+  // inner highlight
+  ctx.strokeStyle = '#556';
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(cx-2, 0); ctx.lineTo(cx-2, H);
+  ctx.stroke();
+  ctx.restore();
+
+  // segments / sparks
+  cable.segments.forEach(seg => {
+    const sy = seg.y - scrollY;
+    if (sy < -80 || sy > H + 80) return;
+
+    if (!seg.active) {
+      // cut mark
+      ctx.save();
+      ctx.strokeStyle = '#ff6b0088';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(cx - 20, sy); ctx.lineTo(cx + 20, sy);
+      ctx.stroke();
+      ctx.restore();
+      return;
+    }
+
+    const dir = seg.side === 'left' ? -1 : 1;
+    const branchX = cx + dir * 70;
+    const ph = seg.sparkPhase + frame * 0.08;
+
+    // branch wire
+    ctx.save();
+    ctx.shadowBlur = 14;
+    ctx.shadowColor = '#00eaffaa';
+    ctx.strokeStyle = '#445566';
+    ctx.lineWidth = 6;
+    ctx.beginPath();
+    ctx.moveTo(cx, sy);
+    ctx.lineTo(branchX, sy + Math.sin(ph) * 6);
+    ctx.stroke();
+
+    // wire core glow
+    ctx.strokeStyle = '#8899aa';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(cx, sy);
+    ctx.lineTo(branchX, sy + Math.sin(ph)*6);
+    ctx.stroke();
+    ctx.restore();
+
+    // spark cluster at branch end
+    drawSparkCluster(ctx, branchX, sy + Math.sin(ph)*6, ph, seg.side);
+
+    // danger indicator on player's side
+    if (seg.side === charSide) {
+      // pulsing ring warning
+      const pulse = (Math.sin(frame * 0.2) * 0.5 + 0.5);
+      ctx.save();
+      ctx.globalAlpha = 0.15 + pulse * 0.25;
+      ctx.strokeStyle = '#ff3b3b';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([4,4]);
+      ctx.beginPath();
+      ctx.arc(branchX, sy + Math.sin(ph)*6, 22 + pulse*8, 0, Math.PI*2);
+      ctx.stroke();
+      ctx.restore();
+    }
+  });
+}
+
+function drawSparkCluster(ctx, x, y, phase, side) {
+  ctx.save();
+  const numSparks = 5;
+  for (let i = 0; i < numSparks; i++) {
+    const a = (i / numSparks) * Math.PI * 2 + phase + i * 0.7;
+    const r = 8 + Math.sin(phase * 1.3 + i) * 6;
+    const sx = x + Math.cos(a) * r;
+    const sy = y + Math.sin(a) * r * 0.6;
+    const colors = ['#00eaff','#fffb00','#ff6b00'];
+    const c = colors[(i + Math.floor(phase)) % 3];
+
+    ctx.shadowBlur = 12;
+    ctx.shadowColor = c;
+    ctx.fillStyle = c;
+    ctx.globalAlpha = 0.6 + Math.sin(phase*2 + i)*0.4;
+    ctx.beginPath();
+    ctx.arc(sx, sy, 2 + Math.sin(phase+i)*1.2, 0, Math.PI*2);
+    ctx.fill();
+  }
+
+  // central glow
+  const grd = ctx.createRadialGradient(x,y,0,x,y,22);
+  grd.addColorStop(0,'#00eaff55');
+  grd.addColorStop(0.5,'#fffb0022');
+  grd.addColorStop(1,'transparent');
+  ctx.globalAlpha = 0.7;
+  ctx.fillStyle = grd;
+  ctx.beginPath();
+  ctx.arc(x,y,22,0,Math.PI*2);
+  ctx.fill();
+  ctx.restore();
+}
+
+// ── DRAW BG ───────────────────────────────
+function drawBG() {
+  // deep dark gradient
+  const grad = ctx.createLinearGradient(0,0,0,H);
+  grad.addColorStop(0,'#07070f');
+  grad.addColorStop(1,'#0d0d18');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0,0,W,H);
+
+  // subtle grid lines
+  ctx.save();
+  ctx.strokeStyle = '#ffffff06';
+  ctx.lineWidth = 1;
+  for(let x=0;x<W;x+=40){
+    ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke();
+  }
+  for(let y=0;y<H;y+=40){
+    ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke();
+  }
+  ctx.restore();
+
+  // side glow panels
+  const gl = ctx.createLinearGradient(0,0,W*0.35,0);
+  gl.addColorStop(0,'#00eaff06'); gl.addColorStop(1,'transparent');
+  ctx.fillStyle = gl; ctx.fillRect(0,0,W*0.35,H);
+  const gr = ctx.createLinearGradient(W,0,W*0.65,0);
+  gr.addColorStop(0,'#ff6b0006'); gr.addColorStop(1,'transparent');
+  ctx.fillStyle = gr; ctx.fillRect(W*0.65,0,W*0.35,H);
+}
+
+// ── DRAW PARTICLES ───────────────────────
+function updateParticles() {
+  for(let i = particles.length-1; i>=0; i--){
+    const p = particles[i];
+    p.x += p.vx; p.y += p.vy; p.vy += 0.12;
+    p.life -= p.decay;
+    if(p.life <= 0){ particles.splice(i,1); continue; }
+    ctx.save();
+    ctx.globalAlpha = p.life;
+    ctx.shadowBlur = 8;
+    ctx.shadowColor = p.color;
+    ctx.fillStyle = p.color;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+function updateAmbientSparks() {
+  if(frame % 8 === 0 && sparks.length < 20) addAmbientSparks();
+  for(let i=sparks.length-1;i>=0;i--){
+    const s = sparks[i];
+    s.x += s.vx; s.y += s.vy;
+    s.flicker += 0.2;
+    s.life -= 0.008;
+    if(s.life<=0||s.y<-10){ sparks.splice(i,1); continue; }
+    ctx.save();
+    ctx.globalAlpha = s.life * (0.5 + Math.sin(s.flicker)*0.5);
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = s.color;
+    ctx.fillStyle = s.color;
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, s.size, 0, Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+// ── DRAW SIDE INDICATORS ─────────────────
+function drawSideIndicators() {
+  // bottom-left: tap zone
+  ctx.save();
+  ctx.globalAlpha = 0.07;
+  ctx.fillStyle = charSide==='left' ? '#00eaff' : '#ffffff';
+  ctx.fillRect(0, H*0.75, W*0.45, H*0.25);
+  ctx.globalAlpha = 0.07;
+  ctx.fillStyle = charSide==='right' ? '#ff6b00' : '#ffffff';
+  ctx.fillRect(W*0.55, H*0.75, W*0.45, H*0.25);
+
+  // tap hint text
+  ctx.globalAlpha = 0.15;
+  ctx.fillStyle = '#fff';
+  ctx.font = `bold 28px Vazirmatn`;
+  ctx.textAlign = 'center';
+  ctx.fillText('◀', W*0.22, H*0.92);
+  ctx.fillText('▶', W*0.78, H*0.92);
+  ctx.restore();
+}
+
+// ── DRAW COMBO ────────────────────────────
+function drawCombo() {
+  if(combo < 3 || comboTimer <= 0) return;
+  ctx.save();
+  const alpha = Math.min(1, comboTimer/20);
+  ctx.globalAlpha = alpha;
+  ctx.font = `bold ${18 + Math.min(combo,10)*2}px Vazirmatn`;
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#f5c518';
+  ctx.shadowBlur = 20;
+  ctx.shadowColor = '#f5c518';
+  ctx.fillText(`⚡ ${combo}x COMBO!`, W/2, H*0.18);
+  ctx.restore();
+}
+
+// ── SCROLL ────────────────────────────────
+let scrollY = 0;
+let targetScrollY = 0;
+
+function updateScroll() {
+  // scroll cable upward over time based on speed
+  targetScrollY += speed * 0.6;
+  scrollY += (targetScrollY - scrollY) * 0.15;
+
+  // re-index segments
+  cable.segments.forEach(s => {
+    // segments move UP relative to scroll
+  });
+
+  // remove segments that scrolled way off top
+  cable.segments = cable.segments.filter(s => {
+    const sy = s.y - scrollY;
+    return sy > -150;
+  });
+
+  // ensure enough segments below
+  let maxY = cable.segments.reduce((m,s)=>Math.max(m,s.y), 0);
+  while(maxY < scrollY + H + 200) {
+    maxY += SEG_HEIGHT;
+    cable.segments.push(makeSegment(maxY / SEG_HEIGHT));
+    cable.segments[cable.segments.length-1].y = maxY;
+  }
+
+  // check if any branch on player's side is scrolling past player position
+  // (player can't react = lose life)
+  cable.segments.forEach(s => {
+    if(!s.active) return;
+    const sy = s.y - scrollY;
+    if(sy < H * 0.38) {  // scrolled past danger zone
+      if(s.side === charSide) {
+        s.active = false;
+        loseLife();
+        shakeScreen();
+      } else {
+        s.active = false;  // safe — went past
+      }
+    }
+  });
+}
+
+// ── MAIN LOOP ────────────────────────────
+function gameLoop() {
+  if(!running) return;
+  raf = requestAnimationFrame(gameLoop);
+  frame++;
+
+  // shake
+  if(shakeDur > 0){
+    shakeX = (Math.random()-0.5)*8*(shakeDur/12);
+    shakeY = (Math.random()-0.5)*8*(shakeDur/12);
+    shakeDur--;
+  } else { shakeX=0; shakeY=0; }
+
+  ctx.save();
+  ctx.translate(shakeX, shakeY);
+  resizeIfNeeded();
+
+  drawBG();
+  updateAmbientSparks();
+  drawCable(scrollY);
+  updateParticles();
+
+  // draw character on their side
+  const cx = charSide === 'left' ? W*0.18 : W*0.82;
+  const cy = H * 0.72;
+  drawCharacter(ctx, cx, cy, 1.1, frame, charSide === 'right');
+
+  drawSideIndicators();
+  drawCombo();
+
+  ctx.restore();
+
+  updateScroll();
+  if(comboTimer > 0) comboTimer--;
+  if(comboTimer === 0) combo = 0;
+}
+
+let lastW=0, lastH=0;
+function resizeIfNeeded(){
+  const rect = canvas.getBoundingClientRect();
+  if(rect.width !== lastW || rect.height !== lastH){
+    resizeCanvas();
+    lastW = rect.width; lastH = rect.height;
+  }
+}
+
+// ══════════════════════════════════════════
+//  START / STOP / GAMEOVER
+// ══════════════════════════════════════════
+function startGame() {
+  showScreen('game');
+  cancelAnimationFrame(raf);
+  resizeCanvas();
+
+  best = loadBest();
+  document.getElementById('hudBest').textContent = best;
+  document.getElementById('gameoverOverlay').classList.remove('show');
+
+  score  = 0;
+  lives  = 3;
+  frame  = 0;
+  speed  = 0.8;
+  scrollY = 0;
+  targetScrollY = 0;
+  charSide = 'left';
+  particles = [];
+  sparks = [];
+  combo = 0; comboTimer = 0;
+  cable = makeCable();
+  cable.x = 0; // set after canvas ready
+
+  document.getElementById('hudScore').textContent = '0';
+  renderLives();
+
+  running = true;
+
+  // small delay to let canvas layout settle
+  requestAnimationFrame(() => {
+    resizeCanvas();
+    cable.x = W/2;
+    populateCable(cable);
+    gameLoop();
+  });
+}
+
+function stopGame() {
+  running = false;
+  cancelAnimationFrame(raf);
+}
+
+async function gameOver() {
+  running = false;
+  cancelAnimationFrame(raf);
+
+  await submitScore(score);
+
+  document.getElementById('goScore').textContent = score;
+  document.getElementById('goBest').textContent  = best;
+  document.getElementById('gameoverOverlay').classList.add('show');
+}
+
+// ══════════════════════════════════════════
+//  LEADERBOARD UI
+// ══════════════════════════════════════════
+let currentTab = 'global';
+
+function showLeaderboard() {
+  showScreen('leaderboard');
+  loadLeaderboard().then(() => renderLB(currentTab));
+}
+
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.lb-tab').forEach((t,i) => {
+    t.classList.toggle('active', (i===0&&tab==='global')||(i===1&&tab==='weekly'));
+  });
+  renderLB(tab);
+}
+
+function rankEmoji(i) {
+  if(i===0) return '🥇';
+  if(i===1) return '🥈';
+  if(i===2) return '🥉';
+  return `${i+1}`;
+}
+function rankClass(i) {
+  if(i===0) return 'gold';
+  if(i===1) return 'silver';
+  if(i===2) return 'bronze';
+  return '';
+}
+
+function renderLB(tab) {
+  const list = document.getElementById('lbList');
+  const data = leaderboardData[tab];
+
+  if(!data || data.length === 0) {
+    list.innerHTML = `<div style="padding:40px;text-align:center;color:#6b6b88;font-size:0.9rem">هنوز امتیازی ثبت نشده<br><br>اولین نفر باش! 🎮</div>`;
+    return;
+  }
+
+  list.innerHTML = data.map((entry, i) => `
+    <div class="lb-row ${entry.id === MY_ID ? 'me' : ''}">
+      <div class="lb-rank ${rankClass(i)}">${rankEmoji(i)}</div>
+      <div class="lb-avatar">${entry.name?.[0] ?? '?'}</div>
+      <div class="lb-name">${escHtml(entry.name)}</div>
+      <div class="lb-score-val">${entry.score.toLocaleString('fa')}</div>
+    </div>
+  `).join('');
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ══════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════
+
+// آیدی ادمین‌ها — با ADMIN_IDS در config.py هماهنگ کن
+const ADMIN_IDS_GAME = [6411345061];
+const IS_ADMIN = ADMIN_IDS_GAME.includes(MY_ID);
+
+// اگه ادمینه، دکمه مخفی "ارسال top10 به ربات" رو نشون بده
+if (IS_ADMIN) {
+  const adminBtn = document.createElement('button');
+  adminBtn.className = 'btn-secondary';
+  adminBtn.style.cssText = 'position:fixed;bottom:16px;left:50%;transform:translateX(-50%);z-index:999;font-size:0.75rem;padding:8px 18px;opacity:0.8';
+  adminBtn.textContent = '📤 ارسال top10 به ربات';
+  adminBtn.onclick = sendTop10ToBot;
+  document.body.appendChild(adminBtn);
+}
+
+// بررسی پارامتر URL برای باز کردن مستقیم لیدربورد
+const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.get('screen') === 'leaderboard') {
+  loadLeaderboard().then(() => showLeaderboard());
+} else {
+  loadLeaderboard();
+}
+
+async function sendTop10ToBot() {
+  await loadLeaderboard();
+  const top10 = leaderboardData.global.slice(0, 10);
+  if (!tg) { alert('فقط توی تلگرام کار میکنه'); return; }
+  // ارسال داده به ربات از طریق sendData
+  tg.sendData(JSON.stringify({ type: 'top10', data: top10 }));
+}
+</script>
+</body>
+</html>
