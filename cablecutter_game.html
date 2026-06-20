@@ -6,1172 +6,654 @@
 <title>کابل‌بُر — PoaroVPN</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;700;900&display=swap');
-
-  :root {
-    --bg:        #0a0a0f;
-    --panel:     #11111a;
-    --surface:   #1a1a28;
-    --border:    #2a2a40;
-    --gold:      #f5c518;
-    --gold2:     #e8a800;
-    --spark1:    #00eaff;
-    --spark2:    #ff6b00;
-    --spark3:    #fffb00;
-    --red:       #ff3b3b;
-    --green:     #00e676;
-    --text:      #e8e8f0;
-    --muted:     #6b6b88;
-  }
-
-  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Vazirmatn', sans-serif;
-    overflow: hidden;
-    height: 100dvh;
-    display: flex;
-    flex-direction: column;
-    user-select: none;
-  }
-
-  /* ── SCREENS ── */
-  .screen { display:none; flex-direction:column; height:100dvh; }
-  .screen.active { display:flex; }
-
-  /* ── HOME ── */
-  #home {
-    align-items: center;
-    justify-content: center;
-    gap: 0;
-    background: radial-gradient(ellipse at 50% 30%, #1a1030 0%, var(--bg) 70%);
-  }
-
-  .logo-wrap {
-    position: relative;
-    margin-bottom: 12px;
-  }
-  .logo-title {
-    font-size: 2.2rem;
-    font-weight: 900;
-    letter-spacing: 2px;
-    color: var(--gold);
-    text-shadow: 0 0 30px #f5c51888, 0 2px 0 #0004;
-    text-align: center;
-    line-height: 1.1;
-  }
-  .logo-sub {
-    font-size: 0.85rem;
-    color: var(--muted);
-    text-align: center;
-    letter-spacing: 4px;
-    margin-top: 4px;
-  }
-
-  /* character preview */
-  .char-preview {
-    width: 110px;
-    height: 110px;
-    margin: 18px auto 10px;
-    position: relative;
-  }
-  .char-preview canvas { width:100%; height:100%; }
-
-  .home-desc {
-    font-size: 0.82rem;
-    color: var(--muted);
-    text-align: center;
-    max-width: 260px;
-    margin: 8px auto 28px;
-    line-height: 1.6;
-  }
-
-  .btn-primary {
-    background: linear-gradient(135deg, var(--gold2), var(--gold));
-    color: #111;
-    font-family: 'Vazirmatn', sans-serif;
-    font-weight: 900;
-    font-size: 1.1rem;
-    border: none;
-    border-radius: 16px;
-    padding: 16px 48px;
-    cursor: pointer;
-    letter-spacing: 1px;
-    box-shadow: 0 4px 24px #f5c51840;
-    transition: transform .1s, box-shadow .1s;
-    -webkit-tap-highlight-color: transparent;
-  }
-  .btn-primary:active { transform: scale(.96); box-shadow: 0 2px 10px #f5c51830; }
-
-  .btn-secondary {
-    background: var(--surface);
-    color: var(--text);
-    font-family: 'Vazirmatn', sans-serif;
-    font-weight: 700;
-    font-size: 0.95rem;
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 12px 32px;
-    cursor: pointer;
-    margin-top: 12px;
-    transition: background .15s;
-  }
-  .btn-secondary:active { background: var(--border); }
-
-  /* ── GAME SCREEN ── */
-  #game {
-    position: relative;
-    flex-direction: column;
-  }
-
-  #gameCanvas {
-    display: block;
-    width: 100%;
-    flex: 1;
-    touch-action: none;
-  }
-
-  .game-hud {
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 12px 16px 8px;
-    background: linear-gradient(to bottom, #0a0a0fcc, transparent);
-    pointer-events: none;
-    z-index: 10;
-  }
-  .hud-score {
-    font-size: 1.6rem;
-    font-weight: 900;
-    color: var(--gold);
-    text-shadow: 0 0 16px var(--gold);
-    min-width: 70px;
-  }
-  .hud-best {
-    font-size: 0.75rem;
-    color: var(--muted);
-    text-align: center;
-  }
-  .hud-best span { color: var(--gold); font-weight:700; }
-  .hud-lives {
-    display: flex;
-    gap: 5px;
-    min-width: 70px;
-    justify-content: flex-end;
-  }
-  .life-dot {
-    width: 10px; height: 10px;
-    border-radius: 50%;
-    background: var(--red);
-    box-shadow: 0 0 6px var(--red);
-  }
-  .life-dot.lost { background: #333; box-shadow: none; }
-
-  /* ── LEADERBOARD ── */
-  #leaderboard {
-    flex-direction: column;
-    background: var(--bg);
-  }
-  .lb-header {
-    display: flex;
-    align-items: center;
-    padding: 16px;
-    border-bottom: 1px solid var(--border);
-    gap: 12px;
-  }
-  .lb-header h2 { font-size: 1.1rem; font-weight: 900; flex: 1; }
-  .lb-back {
-    background: none;
-    border: 1px solid var(--border);
-    color: var(--text);
-    border-radius: 10px;
-    padding: 7px 16px;
-    font-family: 'Vazirmatn', sans-serif;
-    font-size: 0.85rem;
-    cursor: pointer;
-  }
-  .lb-tabs {
-    display: flex;
-    border-bottom: 1px solid var(--border);
-  }
-  .lb-tab {
-    flex: 1;
-    padding: 12px;
-    text-align: center;
-    font-size: 0.85rem;
-    font-weight: 700;
-    color: var(--muted);
-    cursor: pointer;
-    border-bottom: 2px solid transparent;
-    transition: color .15s, border-color .15s;
-  }
-  .lb-tab.active { color: var(--gold); border-color: var(--gold); }
-
-  .lb-list {
-    flex: 1;
-    overflow-y: auto;
-    padding: 8px 0;
-  }
-  .lb-row {
-    display: flex;
-    align-items: center;
-    padding: 12px 16px;
-    border-bottom: 1px solid #ffffff08;
-    gap: 12px;
-    transition: background .1s;
-  }
-  .lb-row.me { background: #f5c51810; }
-  .lb-rank {
-    font-size: 1rem;
-    font-weight: 900;
-    min-width: 28px;
-    text-align: center;
-  }
-  .lb-rank.gold { color: var(--gold); }
-  .lb-rank.silver { color: #c0c0c0; }
-  .lb-rank.bronze { color: #cd7f32; }
-  .lb-avatar {
-    width: 38px; height: 38px;
-    border-radius: 50%;
-    background: var(--surface);
-    border: 2px solid var(--border);
-    display: flex; align-items:center; justify-content:center;
-    font-size: 1.1rem;
-    flex-shrink: 0;
-  }
-  .lb-name { flex: 1; font-size: 0.9rem; font-weight: 700; }
-  .lb-score-val {
-    font-size: 1rem;
-    font-weight: 900;
-    color: var(--gold);
-  }
-
-  /* ── GAMEOVER OVERLAY ── */
-  #gameoverOverlay {
-    position: absolute;
-    inset: 0;
-    background: #0a0a0fdd;
-    display: none;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    z-index: 20;
-    gap: 12px;
-    backdrop-filter: blur(4px);
-  }
-  #gameoverOverlay.show { display: flex; }
-  .go-title {
-    font-size: 2.2rem;
-    font-weight: 900;
-    color: var(--red);
-    text-shadow: 0 0 30px var(--red);
-    letter-spacing: 2px;
-  }
-  .go-score { font-size: 1rem; color: var(--muted); }
-  .go-score b { color: var(--gold); font-size: 1.4rem; }
-  .go-best { font-size: 0.85rem; color: var(--muted); }
-  .go-best span { color: var(--green); font-weight: 700; }
-
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none; }
+body { background:#0a0a12; font-family:'Vazirmatn',Tahoma,sans-serif; overflow:hidden; height:100dvh; }
+#gameCanvas { display:block; width:100vw; height:100dvh; touch-action:none; }
+#ui { position:fixed; top:0; left:0; right:0; display:flex; justify-content:space-between; align-items:flex-start; padding:14px 18px 0; pointer-events:none; z-index:10; }
+#scoreBox { font-size:2.2rem; font-weight:900; color:#ffe44d; text-shadow:0 0 22px #ffe44d99; }
+#bestBox { font-size:.72rem; color:#666; text-align:center; }
+#bestBox span { color:#ffe44d; font-weight:700; display:block; font-size:1rem; }
+#livesBox { display:flex; gap:5px; padding-top:6px; }
+.lv { width:13px; height:13px; border-radius:50%; background:#ff4444; box-shadow:0 0 7px #ff4444; transition:all .2s; }
+.lv.dead { background:#2a2a2a; box-shadow:none; transform:scale(.8); }
+#timerBar { position:fixed; top:56px; left:18px; right:18px; height:8px; background:#1a1a28; border-radius:4px; z-index:10; overflow:hidden; }
+#timerFill { height:100%; width:100%; background:linear-gradient(90deg,#ff4444,#ffe44d,#88ff88); border-radius:4px; transition:width .1s linear; }
+#overlay,#home,#lb { position:fixed; inset:0; background:#0a0a12; display:none; flex-direction:column; align-items:center; justify-content:center; gap:13px; z-index:30; }
+#home.show,#overlay.show,#lb.show { display:flex; }
+#overlay { background:#0a0a12f2; }
+.ovr-title { font-size:2.4rem; font-weight:900; color:#ff4444; letter-spacing:2px; }
+.ovr-score { font-size:.9rem; color:#666; } .ovr-score b { color:#ffe44d; font-size:1.5rem; }
+.ovr-best { font-size:.8rem; color:#555; } .ovr-best span { color:#88ff88; font-weight:700; }
+.home-title { font-size:2.1rem; font-weight:900; color:#ffe44d; letter-spacing:3px; }
+.home-sub { font-size:.72rem; color:#555; letter-spacing:5px; margin-bottom:18px; }
+.home-desc { font-size:.82rem; color:#666; text-align:center; max-width:250px; line-height:1.8; margin-bottom:24px; }
+.btn { background:linear-gradient(135deg,#d4a000,#ffe44d); color:#111; font-weight:900; font-size:1.05rem; border:none; border-radius:14px; padding:15px 46px; cursor:pointer; }
+.btn2 { background:#1a1a28; color:#aaa; font-size:.85rem; border:1px solid #333; border-radius:10px; padding:11px 30px; cursor:pointer; margin-top:8px; }
+.lb-hdr { position:absolute; top:0; left:0; right:0; display:flex; align-items:center; padding:14px 16px; border-bottom:1px solid #1a1a28; gap:10px; }
+.lb-hdr h2 { flex:1; font-size:1rem; font-weight:900; color:#e8e8f0; }
+.lb-back { background:none; border:1px solid #333; color:#aaa; border-radius:8px; padding:6px 14px; font-size:.8rem; cursor:pointer; }
+.lb-tabs { position:absolute; top:53px; left:0; right:0; display:flex; border-bottom:1px solid #1a1a28; }
+.lb-tab { flex:1; padding:11px; text-align:center; font-size:.82rem; font-weight:700; color:#555; cursor:pointer; border-bottom:2px solid transparent; }
+.lb-tab.on { color:#ffe44d; border-color:#ffe44d; }
+.lb-list { position:absolute; top:100px; left:0; right:0; bottom:0; overflow-y:auto; }
+.lb-row { display:flex; align-items:center; padding:11px 16px; border-bottom:1px solid #ffffff07; gap:11px; }
+.lb-row.me { background:#ffe44d12; }
+.lb-rank { font-size:.95rem; font-weight:900; min-width:26px; text-align:center; color:#555; }
+.lb-rank.g{color:#ffe44d;} .lb-rank.s{color:#bbb;} .lb-rank.b{color:#cd7f32;}
+.lb-av { width:36px; height:36px; border-radius:50%; background:#1a1a28; border:1px solid #333; display:flex; align-items:center; justify-content:center; color:#888; flex-shrink:0; }
+.lb-nm { flex:1; font-size:.88rem; font-weight:700; color:#ccc; }
+.lb-sc { font-size:.95rem; font-weight:900; color:#ffe44d; }
 </style>
 </head>
 <body>
 
-<!-- ══ HOME ══════════════════════════════════ -->
-<div id="home" class="screen active">
-  <div class="logo-wrap">
-    <div class="logo-title">⚡ کابل‌بُر</div>
-    <div class="logo-sub">CABLE CUTTER</div>
-  </div>
-  <div class="char-preview">
-    <canvas id="charPreviewCanvas" width="110" height="110"></canvas>
-  </div>
-  <div class="home-desc">
-    کابل‌ها رو ببُر، از جرقه‌ها فرار کن!<br>هرچه سریع‌تر بزنی، امتیاز بیشتر
-  </div>
-  <button class="btn-primary" onclick="startGame()">▶  بازی</button>
-  <button class="btn-secondary" onclick="showLeaderboard()">🏆  تابلوی امتیازات</button>
+<canvas id="gameCanvas"></canvas>
+<div id="ui">
+  <div id="scoreBox">0</div>
+  <div id="bestBox">بهترین<span id="bestVal">0</span></div>
+  <div id="livesBox"></div>
+</div>
+<div id="timerBar"><div id="timerFill"></div></div>
+
+<div id="home" class="show">
+  <canvas id="prevCvs" width="130" height="150" style="margin-bottom:6px"></canvas>
+  <div class="home-title">⚡ کابل‌بُر</div>
+  <div class="home-sub">CABLE CUTTER</div>
+  <div class="home-desc">چپ یا راست بزن تا کابل رو قطع کنی<br>اون طرفی که جرقه داره نرو!<br>سریع باش، نوار وقت تموم نشه</div>
+  <button class="btn" onclick="startGame()">▶  شروع بازی</button>
+  <button class="btn2" onclick="showLB()">🏆  تابلوی امتیازات</button>
 </div>
 
-<!-- ══ GAME ══════════════════════════════════ -->
-<div id="game" class="screen">
-  <div class="game-hud">
-    <div class="hud-score" id="hudScore">0</div>
-    <div class="hud-best">بهترین<br><span id="hudBest">0</span></div>
-    <div class="hud-lives" id="hudLives"></div>
-  </div>
-  <canvas id="gameCanvas"></canvas>
-  <div id="gameoverOverlay">
-    <div class="go-title">GAME OVER</div>
-    <div class="go-score">امتیاز: <b id="goScore">0</b></div>
-    <div class="go-best">بهترین: <span id="goBest">0</span></div>
-    <button class="btn-primary" style="margin-top:8px" onclick="startGame()">دوباره</button>
-    <button class="btn-secondary" onclick="showLeaderboard()">🏆 تابلو</button>
-    <button class="btn-secondary" style="margin-top:0" onclick="showScreen('home')">🏠 خانه</button>
-  </div>
+<div id="overlay">
+  <div class="ovr-title">GAME OVER</div>
+  <div class="ovr-score">امتیاز: <b id="goSc">0</b></div>
+  <div class="ovr-best">بهترین: <span id="goBst">0</span></div>
+  <button class="btn" onclick="startGame()">دوباره</button>
+  <button class="btn2" onclick="showLB()">🏆 تابلو</button>
+  <button class="btn2" style="margin-top:0" onclick="goHome()">🏠 خانه</button>
 </div>
 
-<!-- ══ LEADERBOARD ══════════════════════════ -->
-<div id="leaderboard" class="screen">
-  <div class="lb-header">
-    <button class="lb-back" onclick="showScreen('home')">← برگشت</button>
-    <h2>🏆 تابلوی امتیازات</h2>
-  </div>
-  <div class="lb-tabs">
-    <div class="lb-tab active" onclick="switchTab('global')">جهانی</div>
-    <div class="lb-tab" onclick="switchTab('weekly')">هفتگی</div>
-  </div>
+<div id="lb">
+  <div class="lb-hdr"><button class="lb-back" onclick="goHome()">← برگشت</button><h2>🏆 تابلوی امتیازات</h2></div>
+  <div class="lb-tabs"><div class="lb-tab on" style="cursor:default">🏆 برترین‌های این هفته</div></div>
   <div class="lb-list" id="lbList"></div>
 </div>
 
 <script>
-// ══════════════════════════════════════════
-//  Telegram WebApp init
-// ══════════════════════════════════════════
-const tg = window.Telegram?.WebApp;
-if (tg) {
-  tg.ready();
-  tg.expand();
-  tg.setHeaderColor('#0a0a0f');
-  tg.setBackgroundColor('#0a0a0f');
+const tg=window.Telegram?.WebApp;
+if(tg){ tg.ready(); tg.expand(); tg.setHeaderColor&&tg.setHeaderColor('#0a0a12'); }
+const MY_ID=tg?.initDataUnsafe?.user?.id??0;
+const MY_NAME=tg?.initDataUnsafe?.user?.first_name??'بازیکن';
+
+let lbData={weekly:[]};
+async function loadLB(){try{let r=await window.storage?.get('lb_w',true);if(r?.value)lbData.weekly=JSON.parse(r.value);}catch(e){}}
+async function saveLB(sc){const e={id:MY_ID,name:MY_NAME,score:sc,ts:Date.now()};let arr=lbData.weekly;const i=arr.findIndex(x=>x.id===MY_ID);if(i>=0){if(sc>arr[i].score)arr[i]=e;}else arr.push(e);arr.sort((a,b)=>b.score-a.score);arr=arr.filter(x=>Date.now()-x.ts<7*864e5);lbData.weekly=arr.slice(0,100);try{await window.storage?.set('lb_w',JSON.stringify(lbData.weekly),true);}catch(e){}}
+function loadBest(){return parseInt(localStorage.getItem('cb_best')||'0');}
+function saveBest(v){localStorage.setItem('cb_best',v);}
+
+const canvas=document.getElementById('gameCanvas');
+const ctx=canvas.getContext('2d');
+let W,H,raf,running=false;
+let score,best,lives,frame;
+let charSide;        // 'L' | 'R'
+let segments=[];     // pieces of cable from bottom up: {branch:'L'|'R'|null}
+let particles=[];
+let chopAnim=0;      // 0..1 swing animation progress
+let timer,timerMax;
+let shake=0;
+let cableShift=0;    // smooth animation when a piece is cut
+let fallOffset=0;    // how far cable has auto-fallen (0..SEG_H), when full -> force cut
+let fallSpeed=0;     // current auto-fall speed (grows with score)
+let burnFx=0;        // red burn flash when hit by spark (0..1)
+let burningBranches=[]; // شاخه‌های در حال سوختن: {x,y,dir,life}
+
+const SEG_H=58;      // height of one cable piece
+const N_VISIBLE=9;   // how many pieces shown stacked
+
+function resize(){
+  const w=window.innerWidth,h=window.innerHeight;
+  canvas.width=w*devicePixelRatio; canvas.height=h*devicePixelRatio;
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.scale(devicePixelRatio,devicePixelRatio);
+  W=w; H=h;
+}
+window.addEventListener('resize',resize);
+
+// cable bottom sits at groundY; pieces stack upward
+function groundY(){ return H*0.74; }
+function cableX(){ return W*0.5; }
+function charBaseX(){ return charSide==='L'? W*0.5-46 : W*0.5+46; }
+
+// generate a new top piece, ensuring solvable (never trap player)
+function genPiece(prevBranch){
+  // قانون: بعد از هر شاخه، حتماً یه بلوک خالی بیاد (گپ برای فرار)
+  if(prevBranch){
+    return {branch:null};  // بلوک قبلی شاخه داشت → این یکی خالیه
+  }
+  // بلوک قبلی خالی بود → این یکی می‌تونه شاخه داشته باشه
+  const r=Math.random();
+  if(r<0.40) return {branch:null};   // ۴۰٪ بازم خالی
+  return {branch: Math.random()<.5?'L':'R'};
 }
 
-const TG_USER = tg?.initDataUnsafe?.user;
-const MY_ID   = TG_USER?.id ?? 0;
-const MY_NAME = TG_USER?.first_name ?? 'بازیکن';
-
-// ══════════════════════════════════════════
-//  Storage helpers
-// ══════════════════════════════════════════
-function loadBest() { return parseInt(localStorage.getItem('cableBest') || '0'); }
-function saveBest(v) { localStorage.setItem('cableBest', v); }
-
-// Simple in-memory leaderboard (persisted via window.storage if available)
-let leaderboardData = { global: [], weekly: [] };
-
-async function loadLeaderboard() {
-  try {
-    const r = await window.storage?.get('lb_global', true);
-    if (r?.value) leaderboardData.global = JSON.parse(r.value);
-    const r2 = await window.storage?.get('lb_weekly', true);
-    if (r2?.value) leaderboardData.weekly = JSON.parse(r2.value);
-  } catch(e) {}
+function initSegments(){
+  segments=[];
+  // first few pieces always safe (no branch) so player can start
+  for(let i=0;i<N_VISIBLE+2;i++){
+    if(i<2) segments.push({branch:null});
+    else segments.push(genPiece(segments[i-1].branch));
+  }
 }
 
-async function submitScore(score) {
-  const entry = {
-    id: MY_ID,
-    name: MY_NAME,
-    score: score,
-    ts: Date.now()
-  };
-  // update global
-  const gi = leaderboardData.global.findIndex(e => e.id === MY_ID);
-  if (gi >= 0) { if (score > leaderboardData.global[gi].score) leaderboardData.global[gi] = entry; }
-  else leaderboardData.global.push(entry);
-  leaderboardData.global.sort((a,b) => b.score - a.score);
-  leaderboardData.global = leaderboardData.global.slice(0,100);
+// INPUT: tap a side => chop + move there
+function tap(side){
+  if(!running) return;
+  charSide=side;
+  chopAnim=1;  // trigger swing
 
-  // weekly (entries older than 7 days dropped)
-  const week = Date.now() - 7*86400000;
-  leaderboardData.weekly = leaderboardData.weekly.filter(e => e.ts > week);
-  const wi = leaderboardData.weekly.findIndex(e => e.id === MY_ID);
-  if (wi >= 0) { if (score > leaderboardData.weekly[wi].score) leaderboardData.weekly[wi] = entry; }
-  else leaderboardData.weekly.push(entry);
-  leaderboardData.weekly.sort((a,b) => b.score - a.score);
-  leaderboardData.weekly = leaderboardData.weekly.slice(0,100);
+  // the bottom piece is segments[0]; its branch must NOT be on the side we moved to
+  const bottom=segments[0];
+  if(bottom.branch===side){
+    // شاخه به سر آدمک خورد → اول می‌سوزه، بعد حذف میشه، جون کم میشه
+    const dir = side==='L'?-1:1;
+    const bx = cableX()+dir*(58/2+30);
+    const by = groundY()-SEG_H*1.0;   // ارتفاع سر آدمک (بالاتر)
+    burningBranches.push({x:bx, y:by, dir, life:1});
+    addParticles(bx, by, '#ff4444', 18);
+    addParticles(bx, by, '#ff8800', 12);
+    burnFx=1;
+    shake=14;
+    loseLife();
+    if(!running) return;
+    // شاخه سوخته حذف شد — بلوک رد میشه
+    bottom.branch=null;
+    segments.shift();
+    segments.push(genPiece(segments[segments.length-1].branch));
+    cableShift=SEG_H;
+    fallOffset=0;
+    return;
+  }
 
-  try {
-    await window.storage?.set('lb_global', JSON.stringify(leaderboardData.global), true);
-    await window.storage?.set('lb_weekly', JSON.stringify(leaderboardData.weekly), true);
-  } catch(e) {}
+  // successful chop
+  score++;
+  addParticles(cableX(), groundY()-SEG_H*0.4,'#ffe44d',12);
+  if(bottom.branch){ // cut the branch off -> sparks fly
+    addParticles(cableX()+(bottom.branch==='L'?-55:55), groundY()-SEG_H*0.5,'#00eeff',16);
+  }
+  // remove bottom piece, shift everything down (animate)
+  segments.shift();
+  segments.push(genPiece(segments[segments.length-1].branch));
+  cableShift=SEG_H; // animate from +SEG_H to 0
+
+  // هر ضربه fallOffset رو ریست می‌کنه (یه نفس می‌گیری)
+  fallOffset=0;
+
+  document.getElementById('scoreBox').textContent=score;
+  if(score>best){ best=score; saveBest(best); document.getElementById('bestVal').textContent=best; }
 }
 
-// ══════════════════════════════════════════
-//  Screen management
-// ══════════════════════════════════════════
-function showScreen(id) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-  if (id !== 'game') stopGame();
+canvas.addEventListener('touchstart',e=>{e.preventDefault();tap(e.touches[0].clientX<W/2?'L':'R');},{passive:false});
+canvas.addEventListener('mousedown',e=>tap(e.clientX<W/2?'L':'R'));
+document.addEventListener('keydown',e=>{if(e.key==='ArrowLeft'||e.key==='a')tap('L');if(e.key==='ArrowRight'||e.key==='d')tap('R');});
+
+let lives_;
+function loseLife(){ lives--; renderLives(); if(lives<=0) setTimeout(gameOver,100); }
+function renderLives(){const el=document.getElementById('livesBox');el.innerHTML='';for(let i=0;i<3;i++){const d=document.createElement('div');d.className='lv'+(i>=lives?' dead':'');el.appendChild(d);}}
+
+function addParticles(x,y,c,n){for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,s=1+Math.random()*5;particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-2,life:1,decay:.03+Math.random()*.04,c,sz:2+Math.random()*4});}}
+
+// ───── DRAW ──────────────────────────────────────────────
+function drawBG(){
+  ctx.fillStyle='#07070f'; ctx.fillRect(0,0,W,H);
+  // top sky glow
+  let g=ctx.createLinearGradient(0,0,0,H*.3);
+  g.addColorStop(0,'#100a26'); g.addColorStop(1,'transparent');
+  ctx.fillStyle=g; ctx.fillRect(0,0,W,H*.3);
+
+  // ── GROUND (واضح) ──
+  const gy=groundY()+SEG_H*0.3;
+  // soil gradient
+  let dg=ctx.createLinearGradient(0,gy,0,H);
+  dg.addColorStop(0,'#3a2410'); dg.addColorStop(0.15,'#241608'); dg.addColorStop(1,'#0d0800');
+  ctx.fillStyle=dg; ctx.fillRect(0,gy,W,H-gy);
+  // grass / top edge highlight
+  ctx.fillStyle='#4a7020';
+  ctx.fillRect(0,gy-4,W,5);
+  ctx.fillStyle='#5d8a28';
+  ctx.fillRect(0,gy-4,W,2);
+  // surface line
+  ctx.strokeStyle='#1a1000'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(0,gy+1); ctx.lineTo(W,gy+1); ctx.stroke();
+  // dirt rocks/specks (ثابت)
+  ctx.fillStyle='#1a1005';
+  for(let i=0;i<28;i++){
+    const px=(i*131)%W;
+    const py=gy+10+((i*71)%(H-gy-10));
+    const sz=2+(i%3);
+    ctx.fillRect(px,py,sz,sz);
+  }
+  // lighter pebbles
+  ctx.fillStyle='#4a3015';
+  for(let i=0;i<10;i++){
+    const px=(i*197+40)%W;
+    const py=gy+18+((i*113)%(H-gy-18));
+    ctx.beginPath(); ctx.arc(px,py,2.5,0,Math.PI*2); ctx.fill();
+  }
+  // ── تقسیم واضح چپ/راست (گرید عمودی) ──
+  // ناحیه چپ
+  let lg=ctx.createLinearGradient(0,0,W*0.5,0);
+  lg.addColorStop(0,'#0a1420'); lg.addColorStop(1,'transparent');
+  ctx.fillStyle=lg; ctx.fillRect(0,0,W*0.5,gy);
+  // ناحیه راست
+  let rg=ctx.createLinearGradient(W,0,W*0.5,0);
+  rg.addColorStop(0,'#1a0f08'); rg.addColorStop(1,'transparent');
+  ctx.fillStyle=rg; ctx.fillRect(W*0.5,0,W*0.5,gy);
+  // خط وسط (محور کابل)
+  ctx.strokeStyle='#ffffff0a'; ctx.lineWidth=1; ctx.setLineDash([6,8]);
+  ctx.beginPath(); ctx.moveTo(W*0.5,0); ctx.lineTo(W*0.5,gy); ctx.stroke();
+  ctx.setLineDash([]);
+  // گرید افقی کم‌رنگ
+  ctx.strokeStyle='#ffffff07'; ctx.lineWidth=1;
+  for(let y=0;y<gy;y+=SEG_H){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
 }
 
-// ══════════════════════════════════════════
-//  Character preview canvas (home screen)
-// ══════════════════════════════════════════
-const prevCvs = document.getElementById('charPreviewCanvas');
-const prevCtx = prevCvs.getContext('2d');
-function drawPreviewChar(frame) {
-  const ctx = prevCtx;
-  const W = 110, H = 110;
-  ctx.clearRect(0,0,W,H);
-
-  // glow bg
-  const grd = ctx.createRadialGradient(55,60,5,55,60,52);
-  grd.addColorStop(0,'#f5c51818'); grd.addColorStop(1,'transparent');
-  ctx.fillStyle = grd; ctx.fillRect(0,0,W,H);
-
-  drawCharacter(ctx, 55, 58, 1, frame, false);
-}
-let prevFrame = 0;
-setInterval(()=>{ prevFrame++; drawPreviewChar(prevFrame); }, 80);
-
-// ══════════════════════════════════════════
-//  DRAW CHARACTER
-// ══════════════════════════════════════════
-function drawCharacter(ctx, x, y, scale, frame, facingLeft) {
+function drawCable(){
+  const cx=cableX();
+  // shift = آنیمیشن قطع شدن + سقوط خودکار (هر دو کابل رو پایین می‌برن)
+  const shift=cableShift+fallOffset;
+  // glow behind cable
   ctx.save();
-  ctx.translate(x, y);
-  ctx.scale(facingLeft ? -scale : scale, scale);
+  ctx.shadowBlur=16; ctx.shadowColor='#00eeff30';
+  ctx.strokeStyle='#00eeff14'; ctx.lineWidth=30;
+  ctx.beginPath(); ctx.moveTo(cx,0); ctx.lineTo(cx,groundY()); ctx.stroke();
+  ctx.restore();
 
-  const bob = Math.sin(frame * 0.15) * 1.5;
+  // each piece, from bottom (i=0) upward
+  for(let i=0;i<N_VISIBLE;i++){
+    const seg=segments[i];
+    const yTop = groundY() - (i+1)*SEG_H + shift;
+    const yBot = groundY() - i*SEG_H + shift;
+    drawCablePiece(cx, yTop, yBot, seg, i);
+  }
+}
 
-  // body — dark coat
-  ctx.fillStyle = '#1a1a2e';
+function drawCablePiece(cx, yTop, yBot, seg, i){
+  const w=58;            // عرض بلوک (پهن‌تر = مربعی‌تر چون SEG_H هم ۵۸ هست)
+  const x=cx-w/2;
+  const gap=4;           // فاصله بین بلوک‌ها (گرید واضح)
+  const by=yTop+gap/2;
+  const bh=(yBot-yTop)-gap;
+
+  // ── بلوک کابل (مربع واضح با بُردر و گپ) ──
+  // بدنه فلزی
+  ctx.fillStyle = i%2===0 ? '#2a2a42' : '#252539';
+  ctx.fillRect(x, by, w, bh);
+  // گرادیان عمودی (نور از چپ)
+  let g=ctx.createLinearGradient(x,0,x+w,0);
+  g.addColorStop(0,'#44446a'); g.addColorStop(0.25,'#33334e'); g.addColorStop(0.55,'#22223a'); g.addColorStop(1,'#16162c');
+  ctx.fillStyle=g; ctx.fillRect(x,by,w,bh);
+  // هایلایت سمت چپ (لبه نور)
+  ctx.fillStyle='#5a5a82'; ctx.fillRect(x+3,by+2,5,bh-4);
+  // سایه سمت راست
+  ctx.fillStyle='#0e0e1e'; ctx.fillRect(x+w-5,by+2,4,bh-4);
+  // دو خط افقی (بافت کابل)
+  ctx.strokeStyle='#0e0e1c'; ctx.lineWidth=1;
+  const m=(by+by+bh)/2;
+  ctx.beginPath(); ctx.moveTo(x+7,m-5); ctx.lineTo(x+w-7,m-5); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x+7,m+5); ctx.lineTo(x+w-7,m+5); ctx.stroke();
+  // ── بُردر دوتایی واضح (مشکی بیرون + روشن داخل) ──
+  ctx.strokeStyle='#000'; ctx.lineWidth=3;
+  ctx.strokeRect(x, by, w, bh);
+  ctx.strokeStyle='#6a6a96'; ctx.lineWidth=1.5;
+  ctx.strokeRect(x+2, by+2, w-4, bh-4);
+
+  // ── شاخه جرقه (واضح، از کنار بلوک) ──
+  if(seg.branch){
+    const dir=seg.branch==='L'?-1:1;
+    const my=m;
+    const t=frame*0.15+i;
+    // پایه فلزی شاخه که به بلوک چسبیده
+    ctx.fillStyle='#4a4a60';
+    ctx.fillRect(dir<0 ? x-15 : x+w, my-10, 15, 20);
+    ctx.strokeStyle='#000'; ctx.lineWidth=2;
+    ctx.strokeRect(dir<0 ? x-15 : x+w, my-10, 15, 20);
+    // سیم لخت بیرون‌زده
+    const wireEnd=cx+dir*(w/2+52);
+    ctx.strokeStyle='#667'; ctx.lineWidth=6;
+    ctx.beginPath(); ctx.moveTo(cx+dir*(w/2+12),my); ctx.lineTo(wireEnd,my); ctx.stroke();
+    ctx.strokeStyle='#99a'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(cx+dir*(w/2+12),my); ctx.lineTo(wireEnd,my); ctx.stroke();
+    // توپ جرقه پر سر و صدا انتهای سیم
+    drawSparks(wireEnd, my, t);
+    // قوس برق کوچک بین سیم و بلوک
+    ctx.save();
+    ctx.strokeStyle='#9ff'; ctx.lineWidth=1.5; ctx.globalAlpha=0.4+Math.sin(t*3)*0.3;
+    ctx.shadowBlur=6; ctx.shadowColor='#0ef';
+    let zx=cx+dir*(w/2+10), zy=my;
+    ctx.beginPath(); ctx.moveTo(zx,zy);
+    for(let k=0;k<3;k++){ zx+=dir*12; zy+=(Math.random()-.5)*10; ctx.lineTo(zx,zy); }
+    ctx.stroke();
+    ctx.restore();
+  }
+}
+
+function drawSparks(x,y,t){
+  ctx.save();
+  const cols=['#ffe44d','#00eeff','#ff8800','#fff'];
+  // هاله مرکزی پررنگ
+  let g=ctx.createRadialGradient(x,y,0,x,y,22);
+  g.addColorStop(0,'#fff8'); g.addColorStop(.3,'#ffe44d66'); g.addColorStop(.6,'#00eeff33'); g.addColorStop(1,'transparent');
+  ctx.fillStyle=g; ctx.beginPath(); ctx.arc(x,y,22,0,Math.PI*2); ctx.fill();
+  // جرقه‌های دور
+  for(let i=0;i<7;i++){
+    const a=i/7*Math.PI*2+t+i*0.5;
+    const r=8+Math.sin(t*1.6+i)*7;
+    const sx=x+Math.cos(a)*r, sy=y+Math.sin(a)*r*.7;
+    const c=cols[i%4];
+    ctx.globalAlpha=.5+Math.sin(t*2.5+i)*.5;
+    ctx.fillStyle=c; ctx.shadowBlur=10; ctx.shadowColor=c;
+    ctx.beginPath(); ctx.arc(sx,sy,2.2+Math.sin(t+i)*1.3,0,Math.PI*2); ctx.fill();
+  }
+  // رشته‌های برق کوتاه
+  ctx.globalAlpha=0.7; ctx.strokeStyle='#fff'; ctx.lineWidth=1.5; ctx.shadowBlur=8; ctx.shadowColor='#0ef';
+  for(let i=0;i<3;i++){
+    const a=t*2+i*2.1;
+    ctx.beginPath(); ctx.moveTo(x,y);
+    let zx=x,zy=y;
+    for(let k=0;k<3;k++){ zx+=Math.cos(a)*7+(Math.random()-.5)*6; zy+=Math.sin(a)*7+(Math.random()-.5)*6; ctx.lineTo(zx,zy); }
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+// ───── CHARACTER with clear chop animation ──────────────
+function drawChar(){
+  const x=charBaseX();
+  const y=groundY()+SEG_H*0.15;
+  // chopAnim: 1 -> just hit (axe down), decays to 0 (axe raised)
+  const swing = chopAnim; // 1 = axe striking, 0 = raised ready
+  const bob=Math.sin(frame*0.12)*1.5;
+  const flip = charSide==='R' ? -1 : 1; // face the cable
+  ctx.save();
+  ctx.translate(x,y);
+  ctx.scale(flip,1);
+
+  // ── AXE (drawn first, behind body when raised) ──
+  // arm pivot at shoulder
+  const shX=14, shY=-26+bob;
+  // when swing=0 axe is RAISED (up high), swing=1 axe is DOWN hitting cable
+  const raisedAngle=-2.0;  // up
+  const hitAngle=0.15;     // افقی به سمت کابل
+  const armAngle = raisedAngle + (hitAngle-raisedAngle)*swing;
+
+  ctx.save();
+  ctx.translate(shX,shY);
+  ctx.rotate(armAngle);
+  // upper arm
+  ctx.strokeStyle='#c8a882'; ctx.lineWidth=6; ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(16,2); ctx.stroke();
+  // axe handle
+  ctx.strokeStyle='#7a4e2c'; ctx.lineWidth=4;
+  ctx.beginPath(); ctx.moveTo(16,2); ctx.lineTo(40,2); ctx.stroke();
+  // axe head
+  ctx.fillStyle='#aab8c8';
   ctx.beginPath();
-  ctx.roundRect(-13, -18 + bob, 26, 34, 6);
+  ctx.moveTo(40,-8); ctx.lineTo(52,-10); ctx.lineTo(54,4); ctx.lineTo(40,10); ctx.closePath();
   ctx.fill();
+  ctx.strokeStyle='#ccdaea'; ctx.lineWidth=1.5; ctx.stroke();
+  // blade glow on hit
+  if(swing>0.6){
+    ctx.strokeStyle='#00eeff'; ctx.lineWidth=2; ctx.shadowBlur=10; ctx.shadowColor='#00eeff';
+    ctx.beginPath(); ctx.moveTo(52,-10); ctx.lineTo(54,4); ctx.stroke();
+  }
+  ctx.restore();
 
-  // coat collar / lapels
-  ctx.fillStyle = '#2a2a45';
-  ctx.beginPath();
-  ctx.moveTo(-8, -18 + bob);
-  ctx.lineTo(0, -10 + bob);
-  ctx.lineTo(8, -18 + bob);
-  ctx.fill();
+  // ── BODY ──
+  ctx.fillStyle='#1a1a2e';
+  ctx.beginPath(); ctx.roundRect(-13,-20+bob,26,36,5); ctx.fill();
+  ctx.fillStyle='#252540';
+  ctx.beginPath(); ctx.moveTo(-8,-20+bob); ctx.lineTo(0,-12+bob); ctx.lineTo(8,-20+bob); ctx.closePath(); ctx.fill();
 
   // head
-  ctx.fillStyle = '#c8a882';
-  ctx.beginPath();
-  ctx.ellipse(0, -28 + bob, 14, 14, 0, 0, Math.PI*2);
-  ctx.fill();
-
+  ctx.fillStyle='#c8a882';
+  ctx.beginPath(); ctx.ellipse(0,-32+bob,13,14,0,0,Math.PI*2); ctx.fill();
   // hat
-  ctx.fillStyle = '#111';
-  ctx.fillRect(-16, -44 + bob, 32, 6);   // brim
-  ctx.fillRect(-10, -58 + bob, 20, 16);  // crown
-  // hat band
-  ctx.fillStyle = '#f5c518';
-  ctx.fillRect(-10, -45 + bob, 20, 3);
-
+  ctx.fillStyle='#111'; ctx.fillRect(-16,-48+bob,32,6); ctx.fillRect(-10,-64+bob,20,18);
+  ctx.fillStyle='#ffe44d'; ctx.fillRect(-10,-49+bob,20,3);
   // eyes
-  ctx.fillStyle = '#1a0a00';
-  ctx.beginPath();
-  ctx.ellipse(-5, -29 + bob, 2.5, 2.5, 0, 0, Math.PI*2);
-  ctx.ellipse(5, -29 + bob, 2.5, 2.5, 0, 0, Math.PI*2);
-  ctx.fill();
-  // eye shine
-  ctx.fillStyle = '#fff';
-  ctx.beginPath();
-  ctx.ellipse(-4, -30 + bob, 1, 1, 0, 0, Math.PI*2);
-  ctx.ellipse(6, -30 + bob, 1, 1, 0, 0, Math.PI*2);
-  ctx.fill();
-
-  // ── MUSTACHE (signature element) ──
-  ctx.strokeStyle = '#3a1f00';
-  ctx.lineWidth = 3;
-  ctx.lineCap = 'round';
-
-  // left wing
-  ctx.beginPath();
-  ctx.moveTo(0, -24 + bob);
-  ctx.bezierCurveTo(-3, -24+bob, -9, -26+bob, -11, -22+bob);
-  ctx.stroke();
-  // right wing
-  ctx.beginPath();
-  ctx.moveTo(0, -24 + bob);
-  ctx.bezierCurveTo(3, -24+bob, 9, -26+bob, 11, -22+bob);
-  ctx.stroke();
-  // center dip
-  ctx.fillStyle = '#3a1f00';
-  ctx.beginPath();
-  ctx.arc(0, -23.5 + bob, 1.8, 0, Math.PI*2);
-  ctx.fill();
-
-  // axe arm
-  const swingAngle = Math.sin(frame * 0.25) * 0.4;
-  ctx.save();
-  ctx.translate(14, -10 + bob);
-  ctx.rotate(swingAngle);
-
-  // arm
-  ctx.strokeStyle = '#c8a882';
-  ctx.lineWidth = 5;
-  ctx.beginPath();
-  ctx.moveTo(0,0); ctx.lineTo(12, 16);
-  ctx.stroke();
-
-  // axe handle
-  ctx.strokeStyle = '#8b5e3c';
-  ctx.lineWidth = 3;
-  ctx.beginPath();
-  ctx.moveTo(12,16); ctx.lineTo(22, 4);
-  ctx.stroke();
-
-  // axe head (blade shape)
-  ctx.fillStyle = '#8899aa';
-  ctx.beginPath();
-  ctx.moveTo(22, 4);
-  ctx.lineTo(30, -4);
-  ctx.lineTo(34, 0);
-  ctx.lineTo(28, 10);
-  ctx.closePath();
-  ctx.fill();
-  ctx.strokeStyle = '#bbd0e0';
-  ctx.lineWidth = 1.5;
-  ctx.stroke();
-
-  // axe blade edge glow
-  ctx.strokeStyle = '#00eaff44';
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(30,-4); ctx.lineTo(34,0); ctx.lineTo(28,10);
-  ctx.stroke();
-
-  ctx.restore();
-
-  // idle arm (left)
-  ctx.strokeStyle = '#c8a882';
-  ctx.lineWidth = 5;
-  ctx.beginPath();
-  ctx.moveTo(-13, -10 + bob);
-  ctx.lineTo(-20, 4 + bob);
-  ctx.stroke();
-
+  ctx.fillStyle='#1a0a00';
+  ctx.beginPath(); ctx.ellipse(-5,-33+bob,2.2,2.2,0,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(5,-33+bob,2.2,2.2,0,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='#fff9';
+  ctx.beginPath(); ctx.ellipse(-4,-34+bob,1,1,0,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(6,-34+bob,1,1,0,0,Math.PI*2); ctx.fill();
+  // MUSTACHE
+  ctx.strokeStyle='#3a1800'; ctx.lineWidth=3; ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(0,-27+bob); ctx.bezierCurveTo(-2,-27+bob,-8,-30+bob,-11,-26+bob); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0,-27+bob); ctx.bezierCurveTo(2,-27+bob,8,-30+bob,11,-26+bob); ctx.stroke();
+  ctx.fillStyle='#3a1800'; ctx.beginPath(); ctx.arc(0,-26.5+bob,1.6,0,Math.PI*2); ctx.fill();
+  // idle arm
+  ctx.strokeStyle='#c8a882'; ctx.lineWidth=5;
+  ctx.beginPath(); ctx.moveTo(-13,-14+bob); ctx.lineTo(-20,0+bob); ctx.stroke();
   // legs
-  const legSwing = Math.sin(frame * 0.2) * 4;
-  ctx.fillStyle = '#111';
-  ctx.beginPath();
-  ctx.roundRect(-10, 14+bob, 8, 16, 3);
-  ctx.fill();
-  ctx.beginPath();
-  ctx.roundRect(2, 14+bob, 8, 16, 3);
-  ctx.fill();
-  // boots
-  ctx.fillStyle = '#4a3000';
-  ctx.beginPath();
-  ctx.roundRect(-12, 27+bob, 11, 7, 3);
-  ctx.fill();
-  ctx.beginPath();
-  ctx.roundRect(1, 27+bob, 11, 7, 3);
-  ctx.fill();
+  ctx.fillStyle='#111'; ctx.fillRect(-10,14+bob,8,17); ctx.fillRect(2,14+bob,8,17);
+  ctx.fillStyle='#4a3000';
+  ctx.beginPath(); ctx.roundRect(-12,28+bob,12,8,3); ctx.fill();
+  ctx.beginPath(); ctx.roundRect(1,28+bob,12,8,3); ctx.fill();
 
   ctx.restore();
 }
 
-// ══════════════════════════════════════════
-//  GAME ENGINE
-// ══════════════════════════════════════════
-const canvas = document.getElementById('gameCanvas');
-const ctx    = canvas.getContext('2d');
-
-let W, H, raf, running = false;
-let score, best, lives, frame, speed, spawnTimer, difficulty;
-let charX, charSide; // 'left' | 'right'
-let cable, sparks, particles;
-let justSwitched = false;
-let combo = 0, comboTimer = 0;
-
-function resizeCanvas() {
-  const rect = canvas.getBoundingClientRect();
-  canvas.width  = rect.width  * devicePixelRatio;
-  canvas.height = rect.height * devicePixelRatio;
-  ctx.scale(devicePixelRatio, devicePixelRatio);
-  W = rect.width; H = rect.height;
-}
-window.addEventListener('resize', () => { if (running) { resizeCanvas(); }});
-
-// ── Cable structure ──────────────────────
-// cable: a vertical wire in center, with "branches" (exposed wire ends / sparks)
-// branches are on left or right, player must be on opposite side
-
-function makeCable() {
-  return {
-    x: W * 0.5,
-    segments: [],   // { side, y, active, hitY, sparks: [] }
-    totalCut: 0,
-  };
-}
-
-const SEG_HEIGHT = 90;
-
-function populateCable(cable) {
-  cable.segments = [];
-  let numVisible = Math.ceil(H / SEG_HEIGHT) + 2;
-  for (let i = 0; i < numVisible + 4; i++) {
-    cable.segments.push(makeSegment(i));
-  }
-}
-
-function makeSegment(index) {
-  return {
-    side: Math.random() < 0.5 ? 'left' : 'right',
-    y: index * SEG_HEIGHT,
-    active: true,
-    sparkPhase: Math.random() * Math.PI * 2,
-    crackLevel: 0,   // 0-1 how damaged
-  };
-}
-
-function spawnParticle(x, y, color) {
-  const angle = Math.random() * Math.PI * 2;
-  const spd   = 1 + Math.random() * 5;
-  particles.push({
-    x, y,
-    vx: Math.cos(angle) * spd,
-    vy: Math.sin(angle) * spd - 2,
-    life: 1,
-    decay: 0.03 + Math.random() * 0.04,
-    color,
-    size: 2 + Math.random() * 4,
-  });
-}
-
-// ── Ambient floating sparks ──────────────
-function addAmbientSparks() {
-  sparks.push({
-    x: Math.random() * W,
-    y: H + 10,
-    vx: (Math.random() - 0.5) * 0.8,
-    vy: -0.5 - Math.random() * 1.5,
-    life: 1,
-    color: ['#00eaff','#fffb00','#ff6b00'][Math.floor(Math.random()*3)],
-    size: 1 + Math.random() * 2,
-    flicker: Math.random() * Math.PI * 2,
-  });
-}
-
-// ── Input ────────────────────────────────
-function handleInput(side) {
-  if (!running) return;
-  // side = 'left' or 'right' — player is on that side and chops
-  // the bottom-most active segment that has a branch on opposite side gets cut
-  const seg = cable.segments.find(s => s.active && s.y > H * 0.45 && s.y < H * 0.85);
-  if (!seg) return;
-
-  if (seg.side === side) {
-    // wrong side — hit by spark
-    loseLife();
-    shakeScreen();
-    for(let i=0;i<10;i++) spawnParticle(cable.x + (side==='left'?-1:1)*40, seg.y, '#ff3b3b');
-    return;
-  }
-
-  // correct cut
-  seg.active = false;
-  seg.crackLevel = 1;
-  score++;
-  combo++;
-  comboTimer = 60;
-
-  const cx = cable.x + (side==='left' ? -1 : 1) * 55;
-  for(let i=0;i<20;i++) {
-    const c = ['#00eaff','#fffb00','#ff6b00','#fff'][Math.floor(Math.random()*4)];
-    spawnParticle(cx, seg.y, c);
-  }
-
-  // cable scrolls down = new segment appears on top
-  cable.segments.push(makeSegment(-1));
-
-  // speed up gradually
-  speed = Math.min(3.5, 0.8 + score * 0.025);
-  document.getElementById('hudScore').textContent = score;
-  if (score > best) { best = score; saveBest(best); document.getElementById('hudBest').textContent = best; }
-  charSide = side;
-  justSwitched = true;
-}
-
-canvas.addEventListener('touchstart', e => {
-  e.preventDefault();
-  const touch = e.touches[0];
-  handleInput(touch.clientX < W/2 ? 'left' : 'right');
-}, { passive: false });
-canvas.addEventListener('mousedown', e => {
-  handleInput(e.clientX < W/2 ? 'left' : 'right');
-});
-// keyboard for desktop testing
-document.addEventListener('keydown', e => {
-  if (e.key === 'ArrowLeft'  || e.key === 'a') handleInput('left');
-  if (e.key === 'ArrowRight' || e.key === 'd') handleInput('right');
-});
-
-// ── Lives UI ─────────────────────────────
-function renderLives() {
-  const el = document.getElementById('hudLives');
-  el.innerHTML = '';
-  for(let i=0;i<3;i++){
-    const d = document.createElement('div');
-    d.className = 'life-dot' + (i < (3-lives) ? ' lost' : '');
-    el.appendChild(d);
-  }
-}
-
-let shakeX = 0, shakeY = 0, shakeDur = 0;
-function shakeScreen() { shakeDur = 12; }
-
-function loseLife() {
-  lives = Math.max(0, lives - 1);
-  renderLives();
-  if (lives <= 0) gameOver();
-}
-
-// ── DRAW CABLE ───────────────────────────
-function drawCable(scrollY) {
-  const cx = cable.x;
-
-  // main wire — thick glowing cable
-  ctx.save();
-  ctx.shadowBlur = 18;
-  ctx.shadowColor = '#00eaff44';
-  ctx.strokeStyle = '#334';
-  ctx.lineWidth = 16;
-  ctx.beginPath();
-  ctx.moveTo(cx, 0); ctx.lineTo(cx, H);
-  ctx.stroke();
-
-  // inner highlight
-  ctx.strokeStyle = '#556';
-  ctx.lineWidth = 4;
-  ctx.beginPath();
-  ctx.moveTo(cx-2, 0); ctx.lineTo(cx-2, H);
-  ctx.stroke();
-  ctx.restore();
-
-  // segments / sparks
-  cable.segments.forEach(seg => {
-    const sy = seg.y - scrollY;
-    if (sy < -80 || sy > H + 80) return;
-
-    if (!seg.active) {
-      // cut mark
-      ctx.save();
-      ctx.strokeStyle = '#ff6b0088';
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.moveTo(cx - 20, sy); ctx.lineTo(cx + 20, sy);
-      ctx.stroke();
-      ctx.restore();
-      return;
-    }
-
-    const dir = seg.side === 'left' ? -1 : 1;
-    const branchX = cx + dir * 70;
-    const ph = seg.sparkPhase + frame * 0.08;
-
-    // branch wire
+function drawBurningBranches(){
+  burningBranches=burningBranches.filter(b=>{
+    b.life-=0.04;
+    if(b.life<=0) return false;
     ctx.save();
-    ctx.shadowBlur = 14;
-    ctx.shadowColor = '#00eaffaa';
-    ctx.strokeStyle = '#445566';
-    ctx.lineWidth = 6;
-    ctx.beginPath();
-    ctx.moveTo(cx, sy);
-    ctx.lineTo(branchX, sy + Math.sin(ph) * 6);
-    ctx.stroke();
-
-    // wire core glow
-    ctx.strokeStyle = '#8899aa';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(cx, sy);
-    ctx.lineTo(branchX, sy + Math.sin(ph)*6);
-    ctx.stroke();
+    // شاخه‌ای که داره می‌سوزه — نارنجی/قرمز که محو میشه
+    ctx.globalAlpha=b.life;
+    // هاله آتش
+    let g=ctx.createRadialGradient(b.x,b.y,0,b.x,b.y,28*b.life+8);
+    g.addColorStop(0,'#fff'); g.addColorStop(.3,'#ffaa00'); g.addColorStop(.6,'#ff4400'); g.addColorStop(1,'transparent');
+    ctx.fillStyle=g; ctx.shadowBlur=20; ctx.shadowColor='#ff6600';
+    ctx.beginPath(); ctx.arc(b.x,b.y,28*b.life+8,0,Math.PI*2); ctx.fill();
+    // دود بالارونده
+    ctx.globalAlpha=b.life*0.4;
+    ctx.fillStyle='#333';
+    ctx.beginPath(); ctx.arc(b.x+b.dir*3, b.y-25*(1-b.life), 8*(1-b.life)+3, 0, Math.PI*2); ctx.fill();
     ctx.restore();
-
-    // spark cluster at branch end
-    drawSparkCluster(ctx, branchX, sy + Math.sin(ph)*6, ph, seg.side);
-
-    // danger indicator on player's side
-    if (seg.side === charSide) {
-      // pulsing ring warning
-      const pulse = (Math.sin(frame * 0.2) * 0.5 + 0.5);
-      ctx.save();
-      ctx.globalAlpha = 0.15 + pulse * 0.25;
-      ctx.strokeStyle = '#ff3b3b';
-      ctx.lineWidth = 2;
-      ctx.setLineDash([4,4]);
-      ctx.beginPath();
-      ctx.arc(branchX, sy + Math.sin(ph)*6, 22 + pulse*8, 0, Math.PI*2);
-      ctx.stroke();
-      ctx.restore();
-    }
+    return true;
   });
 }
 
-function drawSparkCluster(ctx, x, y, phase, side) {
-  ctx.save();
-  const numSparks = 5;
-  for (let i = 0; i < numSparks; i++) {
-    const a = (i / numSparks) * Math.PI * 2 + phase + i * 0.7;
-    const r = 8 + Math.sin(phase * 1.3 + i) * 6;
-    const sx = x + Math.cos(a) * r;
-    const sy = y + Math.sin(a) * r * 0.6;
-    const colors = ['#00eaff','#fffb00','#ff6b00'];
-    const c = colors[(i + Math.floor(phase)) % 3];
-
-    ctx.shadowBlur = 12;
-    ctx.shadowColor = c;
-    ctx.fillStyle = c;
-    ctx.globalAlpha = 0.6 + Math.sin(phase*2 + i)*0.4;
-    ctx.beginPath();
-    ctx.arc(sx, sy, 2 + Math.sin(phase+i)*1.2, 0, Math.PI*2);
-    ctx.fill();
-  }
-
-  // central glow
-  const grd = ctx.createRadialGradient(x,y,0,x,y,22);
-  grd.addColorStop(0,'#00eaff55');
-  grd.addColorStop(0.5,'#fffb0022');
-  grd.addColorStop(1,'transparent');
-  ctx.globalAlpha = 0.7;
-  ctx.fillStyle = grd;
-  ctx.beginPath();
-  ctx.arc(x,y,22,0,Math.PI*2);
-  ctx.fill();
-  ctx.restore();
-}
-
-// ── DRAW BG ───────────────────────────────
-function drawBG() {
-  // deep dark gradient
-  const grad = ctx.createLinearGradient(0,0,0,H);
-  grad.addColorStop(0,'#07070f');
-  grad.addColorStop(1,'#0d0d18');
-  ctx.fillStyle = grad;
-  ctx.fillRect(0,0,W,H);
-
-  // subtle grid lines
-  ctx.save();
-  ctx.strokeStyle = '#ffffff06';
-  ctx.lineWidth = 1;
-  for(let x=0;x<W;x+=40){
-    ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke();
-  }
-  for(let y=0;y<H;y+=40){
-    ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke();
-  }
-  ctx.restore();
-
-  // side glow panels
-  const gl = ctx.createLinearGradient(0,0,W*0.35,0);
-  gl.addColorStop(0,'#00eaff06'); gl.addColorStop(1,'transparent');
-  ctx.fillStyle = gl; ctx.fillRect(0,0,W*0.35,H);
-  const gr = ctx.createLinearGradient(W,0,W*0.65,0);
-  gr.addColorStop(0,'#ff6b0006'); gr.addColorStop(1,'transparent');
-  ctx.fillStyle = gr; ctx.fillRect(W*0.65,0,W*0.35,H);
-}
-
-// ── DRAW PARTICLES ───────────────────────
-function updateParticles() {
-  for(let i = particles.length-1; i>=0; i--){
-    const p = particles[i];
-    p.x += p.vx; p.y += p.vy; p.vy += 0.12;
-    p.life -= p.decay;
-    if(p.life <= 0){ particles.splice(i,1); continue; }
-    ctx.save();
-    ctx.globalAlpha = p.life;
-    ctx.shadowBlur = 8;
-    ctx.shadowColor = p.color;
-    ctx.fillStyle = p.color;
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI*2);
-    ctx.fill();
-    ctx.restore();
-  }
-}
-
-function updateAmbientSparks() {
-  if(frame % 8 === 0 && sparks.length < 20) addAmbientSparks();
-  for(let i=sparks.length-1;i>=0;i--){
-    const s = sparks[i];
-    s.x += s.vx; s.y += s.vy;
-    s.flicker += 0.2;
-    s.life -= 0.008;
-    if(s.life<=0||s.y<-10){ sparks.splice(i,1); continue; }
-    ctx.save();
-    ctx.globalAlpha = s.life * (0.5 + Math.sin(s.flicker)*0.5);
-    ctx.shadowBlur = 10;
-    ctx.shadowColor = s.color;
-    ctx.fillStyle = s.color;
-    ctx.beginPath();
-    ctx.arc(s.x, s.y, s.size, 0, Math.PI*2);
-    ctx.fill();
-    ctx.restore();
-  }
-}
-
-// ── DRAW SIDE INDICATORS ─────────────────
-function drawSideIndicators() {
-  // bottom-left: tap zone
-  ctx.save();
-  ctx.globalAlpha = 0.07;
-  ctx.fillStyle = charSide==='left' ? '#00eaff' : '#ffffff';
-  ctx.fillRect(0, H*0.75, W*0.45, H*0.25);
-  ctx.globalAlpha = 0.07;
-  ctx.fillStyle = charSide==='right' ? '#ff6b00' : '#ffffff';
-  ctx.fillRect(W*0.55, H*0.75, W*0.45, H*0.25);
-
-  // tap hint text
-  ctx.globalAlpha = 0.15;
-  ctx.fillStyle = '#fff';
-  ctx.font = `bold 28px Vazirmatn`;
-  ctx.textAlign = 'center';
-  ctx.fillText('◀', W*0.22, H*0.92);
-  ctx.fillText('▶', W*0.78, H*0.92);
-  ctx.restore();
-}
-
-// ── DRAW COMBO ────────────────────────────
-function drawCombo() {
-  if(combo < 3 || comboTimer <= 0) return;
-  ctx.save();
-  const alpha = Math.min(1, comboTimer/20);
-  ctx.globalAlpha = alpha;
-  ctx.font = `bold ${18 + Math.min(combo,10)*2}px Vazirmatn`;
-  ctx.textAlign = 'center';
-  ctx.fillStyle = '#f5c518';
-  ctx.shadowBlur = 20;
-  ctx.shadowColor = '#f5c518';
-  ctx.fillText(`⚡ ${combo}x COMBO!`, W/2, H*0.18);
-  ctx.restore();
-}
-
-// ── SCROLL ────────────────────────────────
-let scrollY = 0;
-let targetScrollY = 0;
-
-function updateScroll() {
-  // scroll cable upward over time based on speed
-  targetScrollY += speed * 0.6;
-  scrollY += (targetScrollY - scrollY) * 0.15;
-
-  // re-index segments
-  cable.segments.forEach(s => {
-    // segments move UP relative to scroll
-  });
-
-  // remove segments that scrolled way off top
-  cable.segments = cable.segments.filter(s => {
-    const sy = s.y - scrollY;
-    return sy > -150;
-  });
-
-  // ensure enough segments below
-  let maxY = cable.segments.reduce((m,s)=>Math.max(m,s.y), 0);
-  while(maxY < scrollY + H + 200) {
-    maxY += SEG_HEIGHT;
-    cable.segments.push(makeSegment(maxY / SEG_HEIGHT));
-    cable.segments[cable.segments.length-1].y = maxY;
-  }
-
-  // check if any branch on player's side is scrolling past player position
-  // (player can't react = lose life)
-  cable.segments.forEach(s => {
-    if(!s.active) return;
-    const sy = s.y - scrollY;
-    if(sy < H * 0.38) {  // scrolled past danger zone
-      if(s.side === charSide) {
-        s.active = false;
-        loseLife();
-        shakeScreen();
-      } else {
-        s.active = false;  // safe — went past
-      }
-    }
+function updateParticles(){
+  particles=particles.filter(p=>{
+    p.x+=p.vx; p.y+=p.vy; p.vy+=.13; p.life-=p.decay;
+    if(p.life<=0) return false;
+    ctx.save(); ctx.globalAlpha=p.life; ctx.shadowBlur=6; ctx.shadowColor=p.c; ctx.fillStyle=p.c;
+    ctx.beginPath(); ctx.arc(p.x,p.y,p.sz*p.life,0,Math.PI*2); ctx.fill(); ctx.restore();
+    return true;
   });
 }
 
-// ── MAIN LOOP ────────────────────────────
-function gameLoop() {
+// lightning periodic
+let ltTimer=90, ltA=0;
+function lightning(){
+  ltTimer--;
+  if(ltTimer<=0){ ltTimer=100+Math.random()*140; ltA=1; }
+  if(ltA>0){
+    ctx.save(); ctx.globalAlpha=ltA*.6; ctx.strokeStyle='#ffe44d'; ctx.lineWidth=2;
+    ctx.shadowBlur=14; ctx.shadowColor='#ffe44d';
+    let lx=cableX()+(-1+Math.random()*2)*40, ly=0;
+    ctx.beginPath(); ctx.moveTo(lx,ly);
+    while(ly<H*.35){ lx+=(Math.random()-.5)*44; ly+=18+Math.random()*22; ctx.lineTo(lx,ly); }
+    ctx.stroke(); ctx.restore();
+    ltA-=.09;
+  }
+}
+
+function drawHint(){
+  ctx.save();
+  // ناحیه فعال (سمتی که شخصیت ایستاده) کمی روشن‌تر
+  ctx.globalAlpha=.04;
+  if(charSide==='L'){ ctx.fillStyle='#00eeff'; ctx.fillRect(0,0,W*.5,groundY()); }
+  else { ctx.fillStyle='#ff8800'; ctx.fillRect(W*.5,0,W*.5,groundY()); }
+  // فلش‌های راهنما پایین
+  ctx.globalAlpha=.12; ctx.fillStyle='#fff'; ctx.font='bold 30px Arial'; ctx.textAlign='center';
+  ctx.fillText('◀',W*.25,H*.96); ctx.fillText('▶',W*.75,H*.96);
+  ctx.restore();
+}
+
+function loop(){
   if(!running) return;
-  raf = requestAnimationFrame(gameLoop);
+  raf=requestAnimationFrame(loop);
   frame++;
 
-  // shake
-  if(shakeDur > 0){
-    shakeX = (Math.random()-0.5)*8*(shakeDur/12);
-    shakeY = (Math.random()-0.5)*8*(shakeDur/12);
-    shakeDur--;
-  } else { shakeX=0; shakeY=0; }
+  // ── سقوط خودکار کابل (هی سریع‌تر) ──
+  // سرعت پله‌ای بر اساس امتیاز
+  // ۰→۲۰→۵۰→۷۵→۱۰۰→۱۲۵→ هر ۲۵ امتیاز یه پله تا ۱۰۰۰۰
+  function stepSpeed(){
+    let lvl=0;
+    if(score>=20) lvl=1;
+    if(score>=50) lvl=2;
+    if(score>=75) lvl=2+Math.floor((score-50)/25);
+    return Math.min(SEG_H*0.12, 0.38+lvl*0.15);
+  }
+  fallOffset += stepSpeed();
+  if(fallOffset >= SEG_H){
+    fallOffset = 0;
+    segments.shift();
+    segments.push(genPiece(segments[segments.length-1].branch));
 
+    // چک برخورد روی بلوک الان (که الان شده segments[0])
+    // یعنی وقتی شاخه رسیده کمر/سینه آدمک — نه پاش
+    const danger = segments[0];
+    if(danger.branch === charSide){
+      const dir = charSide==='L'?-1:1;
+      const bx = cableX() + dir*(58/2+30);
+      const by = groundY()-SEG_H*1.0;
+      burningBranches.push({x:bx, y:by, dir, life:1});
+      addParticles(bx, by, '#ff4444', 20);
+      addParticles(bx, by, '#ff8800', 14);
+      burnFx = 1;
+      shake = 16;
+      danger.branch = null;
+      loseLife();
+      if(!running) return;
+    }
+  }
+  // نوار بالا = چقدر تا سقوط مونده
+  const left = 1 - (fallOffset / SEG_H);
+  document.getElementById('timerFill').style.width = (left*100)+'%';
+
+  // decay animations
+  if(chopAnim>0) chopAnim=Math.max(0,chopAnim-0.12);
+  if(cableShift>0) cableShift=Math.max(0,cableShift-SEG_H*0.35);
+  if(burnFx>0) burnFx=Math.max(0,burnFx-0.05);
+
+  const sh = shake>0 ? shake : 0;
   ctx.save();
-  ctx.translate(shakeX, shakeY);
-  resizeIfNeeded();
+  if(sh>0){ ctx.translate((Math.random()-.5)*sh,(Math.random()-.5)*sh); shake*=.8; if(shake<.5)shake=0; }
 
   drawBG();
-  updateAmbientSparks();
-  drawCable(scrollY);
+  lightning();
+  drawCable();
+  drawBurningBranches();
+  drawHint();
+  drawChar();
   updateParticles();
-
-  // draw character on their side
-  const cx = charSide === 'left' ? W*0.18 : W*0.82;
-  const cy = H * 0.72;
-  drawCharacter(ctx, cx, cy, 1.1, frame, charSide === 'right');
-
-  drawSideIndicators();
-  drawCombo();
-
   ctx.restore();
 
-  updateScroll();
-  if(comboTimer > 0) comboTimer--;
-  if(comboTimer === 0) combo = 0;
-}
-
-let lastW=0, lastH=0;
-function resizeIfNeeded(){
-  const rect = canvas.getBoundingClientRect();
-  if(rect.width !== lastW || rect.height !== lastH){
-    resizeCanvas();
-    lastW = rect.width; lastH = rect.height;
+  // فلش قرمز سوختن روی کل صفحه
+  if(burnFx>0){
+    ctx.save();
+    ctx.globalAlpha=burnFx*0.4;
+    ctx.fillStyle='#ff2200';
+    ctx.fillRect(0,0,W,H);
+    ctx.restore();
   }
 }
 
-// ══════════════════════════════════════════
-//  START / STOP / GAMEOVER
-// ══════════════════════════════════════════
-function startGame() {
-  showScreen('game');
+function startGame(){
+  ['home','overlay','lb'].forEach(id=>document.getElementById(id).classList.remove('show'));
   cancelAnimationFrame(raf);
-  resizeCanvas();
-
-  best = loadBest();
-  document.getElementById('hudBest').textContent = best;
-  document.getElementById('gameoverOverlay').classList.remove('show');
-
-  score  = 0;
-  lives  = 3;
-  frame  = 0;
-  speed  = 0.8;
-  scrollY = 0;
-  targetScrollY = 0;
-  charSide = 'left';
-  particles = [];
-  sparks = [];
-  combo = 0; comboTimer = 0;
-  cable = makeCable();
-  cable.x = 0; // set after canvas ready
-
-  document.getElementById('hudScore').textContent = '0';
+  resize();
+  score=0; lives=3; frame=0; charSide='L'; particles=[]; chopAnim=0; cableShift=0; shake=0;
+  fallOffset=0; burnFx=0; burningBranches=[];
+  timerMax=100; timer=100;
+  best=loadBest();
+  document.getElementById('scoreBox').textContent='0';
+  document.getElementById('bestVal').textContent=best;
   renderLives();
+  initSegments();
+  running=true; loop();
+}
+async function gameOver(){
+  if(!running) return;
+  running=false; cancelAnimationFrame(raf);
+  await saveLB(score);
+  document.getElementById('goSc').textContent=score;
+  document.getElementById('goBst').textContent=best;
+  document.getElementById('overlay').classList.add('show');
+}
+function goHome(){ running=false; cancelAnimationFrame(raf); ['overlay','lb'].forEach(id=>document.getElementById(id).classList.remove('show')); document.getElementById('home').classList.add('show'); }
 
-  running = true;
-
-  // small delay to let canvas layout settle
-  requestAnimationFrame(() => {
-    resizeCanvas();
-    cable.x = W/2;
-    populateCable(cable);
-    gameLoop();
-  });
+function showLB(){ ['home','overlay'].forEach(id=>document.getElementById(id).classList.remove('show')); running=false; cancelAnimationFrame(raf); loadLB().then(renderLBList); document.getElementById('lb').classList.add('show'); }
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');}
+function renderLBList(){
+  const data=lbData.weekly||[]; const el=document.getElementById('lbList');
+  if(!data.length){ el.innerHTML='<div style="padding:40px;text-align:center;color:#444">هنوز امتیازی ثبت نشده 🎮<br><br>اولین نفر باش!</div>'; return; }
+  const m=['🥇','🥈','🥉'],rc=['g','s','b'];
+  el.innerHTML=data.map((e,i)=>`<div class="lb-row ${e.id===MY_ID?'me':''}"><div class="lb-rank ${rc[i]||''}">${i<3?m[i]:i+1}</div><div class="lb-av">${esc(e.name)[0]||'?'}</div><div class="lb-nm">${esc(e.name)}</div><div class="lb-sc">${e.score.toLocaleString('fa')}</div></div>`).join('');
 }
 
-function stopGame() {
-  running = false;
-  cancelAnimationFrame(raf);
+// preview char on home
+const pc=document.getElementById('prevCvs'), px=pc.getContext('2d'); let pf=0;
+function prev(){
+  px.clearRect(0,0,130,150);
+  const x=65,y=105,bob=Math.sin(pf*.13)*2;
+  const sw=(Math.sin(pf*.08)+1)/2; // 0..1 chop demo
+  px.save(); px.translate(x,y);
+  // axe
+  px.save(); px.translate(14,-26+bob); px.rotate(-2.2+2.7*sw);
+  px.strokeStyle='#c8a882'; px.lineWidth=6; px.lineCap='round';
+  px.beginPath(); px.moveTo(0,0); px.lineTo(16,2); px.stroke();
+  px.strokeStyle='#7a4e2c'; px.lineWidth=4; px.beginPath(); px.moveTo(16,2); px.lineTo(38,2); px.stroke();
+  px.fillStyle='#aab8c8'; px.beginPath(); px.moveTo(38,-8); px.lineTo(50,-10); px.lineTo(52,4); px.lineTo(38,10); px.closePath(); px.fill();
+  px.restore();
+  px.fillStyle='#1a1a2e'; px.beginPath(); px.roundRect(-13,-20+bob,26,36,5); px.fill();
+  px.fillStyle='#c8a882'; px.beginPath(); px.ellipse(0,-32+bob,13,14,0,0,Math.PI*2); px.fill();
+  px.fillStyle='#111'; px.fillRect(-16,-48+bob,32,6); px.fillRect(-10,-64+bob,20,18);
+  px.fillStyle='#ffe44d'; px.fillRect(-10,-49+bob,20,3);
+  px.fillStyle='#1a0a00'; px.beginPath(); px.ellipse(-5,-33+bob,2.2,2.2,0,0,Math.PI*2); px.fill(); px.beginPath(); px.ellipse(5,-33+bob,2.2,2.2,0,0,Math.PI*2); px.fill();
+  px.strokeStyle='#3a1800'; px.lineWidth=3; px.lineCap='round';
+  px.beginPath(); px.moveTo(0,-27+bob); px.bezierCurveTo(-2,-27+bob,-8,-30+bob,-11,-26+bob); px.stroke();
+  px.beginPath(); px.moveTo(0,-27+bob); px.bezierCurveTo(2,-27+bob,8,-30+bob,11,-26+bob); px.stroke();
+  px.fillStyle='#111'; px.fillRect(-10,14+bob,8,17); px.fillRect(2,14+bob,8,17);
+  px.fillStyle='#4a3000'; px.beginPath(); px.roundRect(-12,28+bob,12,8,3); px.fill(); px.beginPath(); px.roundRect(1,28+bob,12,8,3); px.fill();
+  px.restore();
+  pf++;
 }
-
-async function gameOver() {
-  running = false;
-  cancelAnimationFrame(raf);
-
-  await submitScore(score);
-
-  document.getElementById('goScore').textContent = score;
-  document.getElementById('goBest').textContent  = best;
-  document.getElementById('gameoverOverlay').classList.add('show');
-}
-
-// ══════════════════════════════════════════
-//  LEADERBOARD UI
-// ══════════════════════════════════════════
-let currentTab = 'global';
-
-function showLeaderboard() {
-  showScreen('leaderboard');
-  loadLeaderboard().then(() => renderLB(currentTab));
-}
-
-function switchTab(tab) {
-  currentTab = tab;
-  document.querySelectorAll('.lb-tab').forEach((t,i) => {
-    t.classList.toggle('active', (i===0&&tab==='global')||(i===1&&tab==='weekly'));
-  });
-  renderLB(tab);
-}
-
-function rankEmoji(i) {
-  if(i===0) return '🥇';
-  if(i===1) return '🥈';
-  if(i===2) return '🥉';
-  return `${i+1}`;
-}
-function rankClass(i) {
-  if(i===0) return 'gold';
-  if(i===1) return 'silver';
-  if(i===2) return 'bronze';
-  return '';
-}
-
-function renderLB(tab) {
-  const list = document.getElementById('lbList');
-  const data = leaderboardData[tab];
-
-  if(!data || data.length === 0) {
-    list.innerHTML = `<div style="padding:40px;text-align:center;color:#6b6b88;font-size:0.9rem">هنوز امتیازی ثبت نشده<br><br>اولین نفر باش! 🎮</div>`;
-    return;
-  }
-
-  list.innerHTML = data.map((entry, i) => `
-    <div class="lb-row ${entry.id === MY_ID ? 'me' : ''}">
-      <div class="lb-rank ${rankClass(i)}">${rankEmoji(i)}</div>
-      <div class="lb-avatar">${entry.name?.[0] ?? '?'}</div>
-      <div class="lb-name">${escHtml(entry.name)}</div>
-      <div class="lb-score-val">${entry.score.toLocaleString('fa')}</div>
-    </div>
-  `).join('');
-}
-
-function escHtml(s) {
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
-
-// ══════════════════════════════════════════
-//  INIT
-// ══════════════════════════════════════════
+setInterval(prev,55);
 
 // آیدی ادمین‌ها — با ADMIN_IDS در config.py هماهنگ کن
-const ADMIN_IDS_GAME = [6411345061];
-const IS_ADMIN = ADMIN_IDS_GAME.includes(MY_ID);
+const ADMIN_IDS_GAME=[6411345061];
+const IS_ADMIN=ADMIN_IDS_GAME.includes(MY_ID);
 
-// اگه ادمینه، دکمه مخفی "ارسال top10 به ربات" رو نشون بده
-if (IS_ADMIN) {
-  const adminBtn = document.createElement('button');
-  adminBtn.className = 'btn-secondary';
-  adminBtn.style.cssText = 'position:fixed;bottom:16px;left:50%;transform:translateX(-50%);z-index:999;font-size:0.75rem;padding:8px 18px;opacity:0.8';
-  adminBtn.textContent = '📤 ارسال top10 به ربات';
-  adminBtn.onclick = sendTop10ToBot;
-  document.body.appendChild(adminBtn);
+// دکمه ارسال top10 به ربات (فقط برای ادمین)
+if(IS_ADMIN){
+  const b=document.createElement('button');
+  b.className='btn2';
+  b.style.cssText='position:fixed;bottom:14px;left:50%;transform:translateX(-50%);z-index:999;font-size:.75rem;opacity:.85';
+  b.textContent='📤 ارسال top10 به ربات';
+  b.onclick=async()=>{ await loadLB(); if(tg) tg.sendData(JSON.stringify({type:'top10',data:lbData.weekly.slice(0,10)})); };
+  document.body.appendChild(b);
 }
 
-// بررسی پارامتر URL برای باز کردن مستقیم لیدربورد
-const urlParams = new URLSearchParams(window.location.search);
-if (urlParams.get('screen') === 'leaderboard') {
-  loadLeaderboard().then(() => showLeaderboard());
-} else {
-  loadLeaderboard();
-}
-
-async function sendTop10ToBot() {
-  await loadLeaderboard();
-  const top10 = leaderboardData.global.slice(0, 10);
-  if (!tg) { alert('فقط توی تلگرام کار میکنه'); return; }
-  // ارسال داده به ربات از طریق sendData
-  tg.sendData(JSON.stringify({ type: 'top10', data: top10 }));
-}
+// باز کردن مستقیم تابلو با ?screen=leaderboard
+const _params=new URLSearchParams(location.search);
+if(_params.get('screen')==='leaderboard'){ loadLB().then(showLB); }
+else { loadLB(); }
+resize();
 </script>
 </body>
 </html>
